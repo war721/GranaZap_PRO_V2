@@ -1,0 +1,576 @@
+# 📱 ROADMAP COMPLETO: Mobile Responsivo + PWA
+
+**Projeto:** GranaZap V5  
+**Objetivo:** Transformar 100% do sistema em responsivo mobile e PWA funcional  
+**Data:** Dezembro 2024
+
+---
+
+## 📊 INVENTÁRIO COMPLETO DO SISTEMA
+
+### 🔐 **AUTENTICAÇÃO (5 páginas)**
+
+#### 1. `/` - Landing Page
+- **Arquivo:** `src/app/page.tsx`
+- **Status Atual:** Desktop only
+- **Problemas Mobile:**
+  - Hero section muito grande
+  - Imagens não responsivas
+  - CTA buttons pequenos
+- **Ações Necessárias:**
+  - [ ] Reduzir altura do hero (60vh → 40vh mobile)
+  - [ ] Stack vertical em mobile
+  - [ ] Botões maiores (min-height: 48px)
+  - [ ] Imagens com lazy loading
+
+#### 2. `/auth/callback` - Callback OAuth
+- **Arquivo:** `src/app/auth/callback/page.tsx`
+- **Status:** OK (apenas loading)
+
+#### 3. `/cadastro` - Registro
+- **Arquivo:** `src/app/cadastro/page.tsx`
+- **Componente:** `AuthLayout`
+- **Problemas Mobile:**
+  - Formulário em 2 colunas
+  - Inputs pequenos
+  - Logo muito grande
+- **Ações Necessárias:**
+  - [ ] Formulário em coluna única mobile
+  - [ ] Inputs altura mínima 48px
+  - [ ] Logo reduzida (80px → 60px)
+  - [ ] Wizard steps para mobile
+  - [ ] Validação inline
+
+#### 4. `/esqueci-senha` - Recuperação de Senha
+- **Arquivo:** `src/app/esqueci-senha/page.tsx`
+- **Problemas Mobile:**
+  - Layout desktop
+  - Mensagens pequenas
+- **Ações Necessárias:**
+  - [ ] Layout vertical mobile
+  - [ ] Mensagens maiores e destacadas
+  - [ ] Botão fullwidth mobile
+
+#### 5. `/redefinir-senha` - Redefinir Senha
+- **Arquivo:** `src/app/redefinir-senha/page.tsx`
+- **Problemas Mobile:**
+  - Similar ao esqueci-senha
+- **Ações Necessárias:**
+  - [ ] Layout vertical
+  - [ ] Inputs maiores
+  - [ ] Feedback visual melhor
+
+---
+
+### 🏠 **DASHBOARD (15 páginas principais)**
+
+#### 6. `/dashboard` - Dashboard Principal
+- **Arquivo:** `src/app/dashboard/page.tsx`
+- **Componentes:**
+  - `StatsCards` - Cards de resumo
+  - `ChartsSection` - Gráficos
+  - `RecentTransactions` - Transações recentes
+  - `UpcomingPayments` - Pagamentos futuros
+- **Problemas Mobile:**
+  - Grid 4 colunas (stats)
+  - Gráficos sem scroll horizontal
+  - Tabelas cortadas
+- **Ações Necessárias:**
+  - [ ] Stats em grid 2 colunas mobile
+  - [ ] Gráficos altura fixa (300px)
+  - [ ] Scroll horizontal em listas
+  - [ ] FAB button para nova transação
+  - [ ] Pull to refresh
+
+#### 7. `/dashboard/receitas` - Receitas
+- **Arquivo:** `src/app/dashboard/receitas/page.tsx`
+- **Componente:** `TransactionPage` (tipo='entrada')
+- **Modais Relacionados:**
+  - `TransactionModal` - Criar/Editar receita
+  - `DeleteTransactionModal` - Deletar
+- **Problemas Mobile:**
+  - Tabela não responsiva
+  - Filtros em linha
+  - Botões pequenos
+- **Ações Necessárias:**
+  - [ ] Cards ao invés de tabela
+  - [ ] Filtros em accordion
+  - [ ] Swipe para deletar
+  - [ ] Bottom sheet para filtros
+
+#### 8. `/dashboard/despesas` - Despesas
+- **Arquivo:** `src/app/dashboard/despesas/page.tsx`
+- **Componente:** `TransactionPage` (tipo='saida')
+- **Modais Relacionados:**
+  - `TransactionModal` - Criar/Editar despesa
+  - `DeleteTransactionModal`
+- **Ações Necessárias:**
+  - [ ] Mesmas ações de Receitas
+  - [ ] Destaque visual para despesas altas
+
+#### 9. `/dashboard/transacoes` - Todas Transações
+- **Arquivo:** `src/app/dashboard/transacoes/page.tsx`
+- **Componente:** `AllTransactionsPage`
+- **Modais:**
+  - `AllTransactionsModal`
+  - `TransactionModal`
+- **Problemas Mobile:**
+  - Tabela complexa
+  - Muitas colunas
+  - Filtros avançados
+- **Ações Necessárias:**
+  - [ ] Timeline vertical mobile
+  - [ ] Agrupamento por data
+  - [ ] Filtros em bottom sheet
+  - [ ] Infinite scroll
+  - [ ] Search bar sticky
+
+#### 10. `/dashboard/agendados` - Lançamentos Futuros
+- **Arquivo:** `src/app/dashboard/agendados/page.tsx`
+- **Componente:** `FutureTransactionsPage`
+- **Modais:**
+  - `FutureTransactionModal`
+  - `ConfirmPaymentModal`
+  - `CancelPaymentModal`
+  - `EditFutureConfirmationModal`
+  - `DeleteFutureConfirmationModal`
+  - `ManageRecurrenceModal`
+- **Problemas Mobile:**
+  - Tabela com muitas colunas
+  - Ações em dropdown
+  - Calendário não responsivo
+- **Ações Necessárias:**
+  - [ ] Cards com status visual
+  - [ ] Calendário mobile-friendly
+  - [ ] Swipe actions
+  - [ ] Bottom sheet para ações
+  - [ ] Badges de status
+
+#### 11. `/dashboard/contas` - Contas Bancárias
+- **Arquivo:** `src/app/dashboard/contas/page.tsx`
+- **Modais:**
+  - `AddAccountModal`
+  - `EditAccountModal`
+  - `DeleteAccountModal`
+  - `AdjustBalanceModal`
+  - `TransferModal`
+  - `ProLaboreModal`
+- **Problemas Mobile:**
+  - Cards em grid 3 colunas
+  - Botões de ação pequenos
+  - Modais complexos
+- **Ações Necessárias:**
+  - [ ] Cards em coluna única mobile
+  - [ ] Saldo destacado
+  - [ ] Ações em bottom sheet
+  - [ ] Swipe para transferir
+  - [ ] Gráfico de distribuição responsivo
+
+#### 12. `/dashboard/cartoes` - Cartões de Crédito
+- **Arquivo:** `src/app/dashboard/cartoes/page.tsx`
+- **Componente:** `CardsPage`
+- **Modais:**
+  - `CreditCardModal`
+  - `CreditCardSuccessModal`
+- **Problemas Mobile:**
+  - Cards em grid
+  - Preview do cartão pequeno
+- **Ações Necessárias:**
+  - [ ] Carousel horizontal
+  - [ ] Swipe entre cartões
+  - [ ] Preview maior mobile
+  - [ ] Indicadores de página
+
+#### 13. `/dashboard/cartoes/[id]` - Detalhes do Cartão
+- **Arquivo:** `src/app/dashboard/cartoes/[id]/page.tsx`
+- **Componente:** `CardDetailsPage`
+- **Modais:**
+  - `PayInvoiceModal`
+  - `ReversePaymentModal`
+- **Problemas Mobile:**
+  - Layout complexo
+  - Gráfico de limite
+  - Tabela de fatura
+- **Ações Necessárias:**
+  - [ ] Stack vertical
+  - [ ] Gráfico circular responsivo
+  - [ ] Lista de lançamentos em cards
+  - [ ] Botão pagar fatura fixo
+
+#### 14. `/dashboard/categorias` - Categorias
+- **Arquivo:** `src/app/dashboard/categorias/page.tsx`
+- **Componente:** `CategoriesPage`
+- **Modais:**
+  - `CategoryModal`
+  - `DeleteCategoryModal`
+- **Problemas Mobile:**
+  - Grid 4 colunas
+  - Ícones pequenos
+- **Ações Necessárias:**
+  - [ ] Grid 2 colunas mobile
+  - [ ] Ícones maiores
+  - [ ] Swipe para editar/deletar
+  - [ ] Busca de categorias
+
+#### 15. `/dashboard/investimentos` - Investimentos
+- **Arquivo:** `src/app/dashboard/investimentos/page.tsx`
+- **Modais:**
+  - `AddPositionModal`
+  - `EditPositionModal`
+  - `DeletePositionModal`
+  - `AddDividendModal`
+  - `InvestmentSuccessModal`
+  - `InvestmentErrorModal`
+- **Problemas Mobile:**
+  - Tabela complexa
+  - Gráficos não responsivos
+  - Muitas métricas
+- **Ações Necessárias:**
+  - [ ] Cards de posição
+  - [ ] Gráfico de pizza responsivo
+  - [ ] Métricas em grid 2x2
+  - [ ] Filtros em tabs
+  - [ ] Pull to refresh preços
+
+#### 16. `/dashboard/metas` - Metas
+- **Arquivo:** `src/app/dashboard/metas/page.tsx`
+- **Problemas Mobile:**
+  - Progress bars pequenas
+  - Cards em grid
+- **Ações Necessárias:**
+  - [ ] Cards em coluna única
+  - [ ] Progress bars maiores
+  - [ ] Valores destacados
+  - [ ] Swipe para editar
+
+#### 17. `/dashboard/relatorios` - Relatórios
+- **Arquivo:** `src/app/dashboard/relatorios/page.tsx`
+- **Componente:** `ReportsPage`
+- **Problemas Mobile:**
+  - Gráficos lado a lado
+  - Tabelas complexas
+  - Filtros em linha
+- **Ações Necessárias:**
+  - [ ] Gráficos empilhados verticalmente
+  - [ ] Filtros em accordion
+  - [ ] Scroll horizontal em tabelas
+  - [ ] Export em bottom sheet
+  - [ ] Date range picker mobile
+
+#### 18. `/dashboard/configuracoes` - Configurações
+- **Arquivo:** `src/app/dashboard/configuracoes/page.tsx`
+- **Componentes:**
+  - `SettingsSidebar`
+  - `ProfileSettings`
+  - `SecuritySettings`
+  - `NotificationSettings`
+  - `DataManagement`
+  - `SharedManagement`
+- **Modais:**
+  - `AddUserModal`
+  - `EditMemberModal`
+  - `EditMemberInfoModal`
+  - `SuccessModal`
+  - `ErrorModal`
+  - `ExportDataModal`
+  - `ClearDataModal`
+  - `DeleteAccountModal`
+- **Problemas Mobile:**
+  - Sidebar lateral
+  - Formulários em 2 colunas
+  - Switches pequenos
+- **Ações Necessárias:**
+  - [ ] Tabs ao invés de sidebar
+  - [ ] Formulários em coluna única
+  - [ ] Switches maiores (touch-friendly)
+  - [ ] Seções em accordion
+  - [ ] Confirmações em bottom sheet
+
+#### 19. `/dashboard/whatsapp-agent` - WhatsApp Agent
+- **Arquivo:** `src/app/dashboard/whatsapp-agent/page.tsx`
+- **Componente:** `WhatsAppAgentPage`
+- **Problemas Mobile:**
+  - Cards em grid
+  - Exemplos longos
+- **Ações Necessárias:**
+  - [ ] Cards em coluna única
+  - [ ] Exemplos colapsáveis
+  - [ ] Botão WhatsApp fixo
+
+#### 20. `/dashboard/instalacao` - Instalação PWA
+- **Arquivo:** `src/app/dashboard/instalacao/page.tsx`
+- **Componente:** `PWAInstallPage`
+- **Problemas Mobile:**
+  - Vídeo em mockup
+  - Steps em cards
+- **Ações Necessárias:**
+  - [ ] Vídeo fullwidth mobile
+  - [ ] Steps simplificados
+  - [ ] Botão instalar destacado
+
+---
+
+### 👨‍💼 **ADMIN (7 páginas)**
+
+#### 21. `/admin` - Dashboard Admin
+- **Arquivo:** `src/app/admin/page.tsx`
+- **Ações:** [ ] Responsivo mobile
+
+#### 22. `/admin/users` - Gestão de Usuários
+- **Arquivo:** `src/app/admin/users/page.tsx`
+- **Componente:** `UsersManagementPage`
+- **Modais:**
+  - `UserCreateModal`
+  - `UserEditModal`
+  - `UserDetailsModal`
+  - `UserDeleteModal`
+  - `ResetPasswordModal`
+- **Ações:** [ ] Tabela → Cards mobile
+
+#### 23. `/admin/plans` - Gestão de Planos
+- **Arquivo:** `src/app/admin/plans/page.tsx`
+- **Componente:** `PlansManagementPage`
+- **Modais:**
+  - `PlanCreateModal`
+  - `PlanEditModal`
+  - `DeletePlanModal`
+- **Ações:** [ ] Cards responsivos
+
+#### 24. `/admin/stats` - Estatísticas
+- **Arquivo:** `src/app/admin/stats/page.tsx`
+- **Componente:** `StatsPage`
+- **Ações:** [ ] Gráficos responsivos
+
+#### 25. `/admin/settings` - Configurações Admin
+- **Arquivo:** `src/app/admin/settings/page.tsx`
+- **Componente:** `SettingsPage`
+- **Subcomponentes:**
+  - `AdminSettings`
+  - `LogoSettings`
+  - `WhatsAppSettings`
+- **Ações:** [ ] Formulários mobile
+
+#### 26. `/admin/test` - Testes
+- **Arquivo:** `src/app/admin/test/page.tsx`
+- **Ações:** [ ] N/A (página de teste)
+
+---
+
+### 📄 **PÁGINAS ESTÁTICAS (3 páginas)**
+
+#### 27. `/planos` - Planos de Assinatura
+- **Arquivo:** `src/app/planos/page.tsx`
+- **Ações:** [ ] Cards em coluna mobile
+
+#### 28. `/politica-de-privacidade` - Política
+- **Arquivo:** `src/app/politica-de-privacidade/page.tsx`
+- **Ações:** [ ] Texto responsivo
+
+#### 29. `/termos-de-uso` - Termos
+- **Arquivo:** `src/app/termos-de-uso/page.tsx`
+- **Ações:** [ ] Texto responsivo
+
+---
+
+## 🎨 COMPONENTES COMPARTILHADOS
+
+### Layout Components
+1. **Sidebar** (`src/components/dashboard/sidebar.tsx`)
+   - [ ] Drawer mobile
+   - [ ] Overlay
+   - [ ] Animação slide
+
+2. **Header** (`src/components/dashboard/header.tsx`)
+   - [ ] Hamburger menu
+   - [ ] Título centralizado
+   - [ ] Botão voltar
+
+3. **Modal Base** (`src/components/ui/modal.tsx`)
+   - [ ] Fullscreen mobile
+   - [ ] Header fixo
+   - [ ] Footer fixo
+   - [ ] Scroll no conteúdo
+
+### UI Components
+4. **Button** (`src/components/ui/button.tsx`)
+   - [ ] Min-height 48px
+   - [ ] Touch feedback
+
+5. **Input** (`src/components/ui/input.tsx`)
+   - [ ] Min-height 48px
+   - [ ] Font-size 16px
+   - [ ] Ícones maiores
+
+6. **Checkbox** (`src/components/ui/checkbox.tsx`)
+   - [ ] Tamanho 24x24px
+   - [ ] Touch area 44x44px
+
+---
+
+## 📋 MODAIS COMPLETOS (39 modais)
+
+### Transações (7 modais)
+1. ✅ TransactionModal
+2. ✅ DeleteTransactionModal
+3. ✅ FutureTransactionModal
+4. ✅ ConfirmPaymentModal
+5. ✅ CancelPaymentModal
+6. ✅ EditFutureConfirmationModal
+7. ✅ DeleteFutureConfirmationModal
+
+### Contas (6 modais)
+8. ✅ AddAccountModal
+9. ✅ EditAccountModal
+10. ✅ DeleteAccountModal
+11. ✅ AdjustBalanceModal
+12. ✅ TransferModal
+13. ✅ ProLaboreModal
+
+### Cartões (4 modais)
+14. ✅ CreditCardModal
+15. ✅ CreditCardSuccessModal
+16. ✅ PayInvoiceModal
+17. ✅ ReversePaymentModal
+
+### Categorias (2 modais)
+18. ✅ CategoryModal
+19. ✅ DeleteCategoryModal
+
+### Investimentos (6 modais)
+20. ✅ AddPositionModal
+21. ✅ EditPositionModal
+22. ✅ DeletePositionModal
+23. ✅ AddDividendModal
+24. ✅ InvestmentSuccessModal
+25. ✅ InvestmentErrorModal
+
+### Configurações (8 modais)
+26. ✅ AddUserModal
+27. ✅ EditMemberModal
+28. ✅ EditMemberInfoModal
+29. ✅ ExportDataModal
+30. ✅ ClearDataModal
+31. ✅ DeleteAccountModal (settings)
+32. ✅ SuccessModal
+33. ✅ ErrorModal
+
+### Admin (9 modais)
+34. ✅ UserCreateModal
+35. ✅ UserEditModal
+36. ✅ UserDetailsModal
+37. ✅ UserDeleteModal
+38. ✅ ResetPasswordModal
+39. ✅ PlanCreateModal
+40. ✅ PlanEditModal
+41. ✅ DeletePlanModal
+42. ✅ AdminSuccessModal
+
+### Outros (5 modais)
+43. ✅ ManageRecurrenceModal
+44. ✅ SubscriptionLockModal
+45. ✅ AllTransactionsModal
+46. ✅ EmailConfirmationModal
+47. ✅ SignupBlockedModal
+
+---
+
+## 🚀 IMPLEMENTAÇÃO PWA
+
+### Fase 1: Configuração Base
+- [ ] Criar `public/manifest.json`
+- [ ] Adicionar meta tags no layout
+- [ ] Gerar ícones (192x192, 512x512)
+- [ ] Criar splash screens iOS
+- [ ] Configurar viewport
+
+### Fase 2: Service Worker
+- [ ] Criar `public/sw.js`
+- [ ] Cache de assets estáticos
+- [ ] Cache de API calls
+- [ ] Estratégia offline-first
+- [ ] Background sync
+
+### Fase 3: Funcionalidades PWA
+- [ ] Install prompt customizado
+- [ ] Detectar se está instalado
+- [ ] Push notifications
+- [ ] Badge API
+- [ ] Share API
+
+---
+
+## 📱 NAVEGAÇÃO MOBILE
+
+### Bottom Navigation Bar
+- [ ] Criar componente BottomNav
+- [ ] 5 itens principais:
+  - Dashboard
+  - Transações
+  - Relatórios
+  - Contas
+  - Mais
+- [ ] Indicador ativo
+- [ ] Badges de notificação
+
+### FAB (Floating Action Button)
+- [ ] Botão + fixo
+- [ ] Menu radial:
+  - Nova Receita
+  - Nova Despesa
+  - Nova Transferência
+- [ ] Animação
+
+---
+
+## ✅ CHECKLIST DE IMPLEMENTAÇÃO
+
+### Prioridade CRÍTICA (Semana 1)
+- [ ] PWA manifest.json
+- [ ] Service Worker básico
+- [ ] Meta tags mobile
+- [ ] Ícones PWA
+- [ ] Modal base responsivo
+- [ ] Sidebar drawer mobile
+- [ ] Bottom navigation
+- [ ] Login/Cadastro mobile
+
+### Prioridade ALTA (Semana 2)
+- [ ] Dashboard mobile
+- [ ] TransactionModal mobile
+- [ ] Todas listas → cards
+- [ ] FAB button
+- [ ] Filtros em bottom sheet
+- [ ] Swipe gestures
+
+### Prioridade MÉDIA (Semana 3)
+- [ ] Todos modais mobile
+- [ ] Gráficos responsivos
+- [ ] Formulários mobile
+- [ ] Configurações mobile
+- [ ] Admin mobile
+
+### Prioridade BAIXA (Semana 4)
+- [ ] Push notifications
+- [ ] Offline mode avançado
+- [ ] Background sync
+- [ ] Otimizações
+- [ ] Testes iOS/Android
+
+---
+
+## 📊 MÉTRICAS DE SUCESSO
+
+- [ ] Lighthouse PWA Score > 90
+- [ ] Mobile Performance > 80
+- [ ] Todos touch targets ≥ 44x44px
+- [ ] Font-size inputs ≥ 16px
+- [ ] Contraste WCAG AA
+- [ ] Funciona offline
+- [ ] Instalável iOS/Android
+
+---
+
+**Total de Páginas:** 29  
+**Total de Modais:** 47  
+**Total de Componentes:** 50+  
+**Tempo Estimado:** 4 semanas

@@ -7,6 +7,7 @@ import { QueryProvider } from "@/components/providers/query-provider";
 import { BrandingProvider } from "@/contexts/branding-context";
 import { BrandingStyleInjector } from "@/components/branding-style-injector";
 import { DynamicMetadata } from "@/components/dynamic-metadata";
+import { PWARegister } from "@/components/pwa-register";
 import { createClient } from "@/lib/supabase/server";
 
 const geistSans = Geist({
@@ -27,10 +28,27 @@ export async function generateMetadata(): Promise<Metadata> {
     
     const appName = (data as any)?.app_name || 'GranaZap';
     const faviconUrl = (data as any)?.favicon_url || (data as any)?.app_logo_url;
+    const primaryColor = (data as any)?.primary_color || '#22C55E';
     
     return {
       title: appName,
       description: `Sistema de gestão financeira - ${appName}`,
+      manifest: '/manifest.json',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: appName,
+      },
+      formatDetection: {
+        telephone: false,
+      },
+      themeColor: primaryColor,
+      viewport: {
+        width: 'device-width',
+        initialScale: 1,
+        maximumScale: 1,
+        userScalable: false,
+      },
       icons: faviconUrl ? {
         icon: faviconUrl,
         apple: faviconUrl,
@@ -40,6 +58,19 @@ export async function generateMetadata(): Promise<Metadata> {
     return {
       title: 'GranaZap',
       description: 'Sistema de gestão financeira',
+      manifest: '/manifest.json',
+      appleWebApp: {
+        capable: true,
+        statusBarStyle: 'default',
+        title: 'GranaZap',
+      },
+      themeColor: '#22C55E',
+      viewport: {
+        width: 'device-width',
+        initialScale: 1,
+        maximumScale: 1,
+        userScalable: false,
+      },
     };
   }
 }
@@ -63,6 +94,7 @@ export default function RootLayout({
             <CurrencyProvider>
               <BrandingProvider>
                 <DynamicMetadata />
+                <PWARegister />
                 {children}
               </BrandingProvider>
             </CurrencyProvider>

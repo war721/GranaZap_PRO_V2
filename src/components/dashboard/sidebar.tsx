@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -32,6 +32,7 @@ import { useAccountFilter } from "@/hooks/use-account-filter";
 import { useBranding } from "@/contexts/branding-context";
 import { useWhatsAppConfig } from "@/hooks/use-whatsapp-config";
 import { useUserPlan } from "@/hooks/use-user-plan";
+import { useSidebar } from "@/contexts/sidebar-context";
 
 export function DashboardSidebar() {
   const pathname = usePathname();
@@ -41,9 +42,27 @@ export function DashboardSidebar() {
   const { settings } = useBranding();
   const { data: whatsappConfig } = useWhatsAppConfig();
   const { permiteModoPJ } = useUserPlan();
+  const { isOpen, close } = useSidebar();
   const [collapsed, setCollapsed] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+
+  // Close sidebar on navigation (mobile)
+  useEffect(() => {
+    close();
+  }, [pathname]);
+
+  // Prevent body scroll when sidebar is open (mobile)
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   const navigation = [
     { name: t('sidebar.dashboard'), href: "/dashboard", icon: LayoutDashboard },
@@ -80,12 +99,25 @@ export function DashboardSidebar() {
   };
 
   return (
-    <aside
-      className={cn(
-        "bg-[#111827] border-r border-white/5 flex flex-col transition-all duration-300",
-        collapsed ? "w-20" : "w-[260px]"
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={close}
+        />
       )}
-    >
+
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "bg-[#111827] border-r border-white/5 flex flex-col transition-all duration-300",
+          "fixed md:static inset-y-0 left-0 z-50",
+          "md:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full",
+          collapsed ? "w-20" : "w-[260px]"
+        )}
+      >
       {/* Logo & Brand */}
       <div className="p-4 border-b border-white/5 flex items-center justify-between">
         {!collapsed && (
@@ -262,5 +294,6 @@ export function DashboardSidebar() {
         </button>
       </div>
     </aside>
+    </>
   );
 }

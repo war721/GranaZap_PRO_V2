@@ -1,6 +1,7 @@
 "use client";
 
 import { AccountFilterProvider } from "@/contexts/account-filter-context";
+import { SidebarProvider } from "@/contexts/sidebar-context";
 import { SubscriptionLockModal } from "@/components/dashboard/subscription-lock-modal";
 import dynamic from 'next/dynamic';
 
@@ -30,6 +31,26 @@ const DashboardHeaderDynamic = dynamic(
   }
 );
 
+// Bottom Navigation
+const BottomNavDynamic = dynamic(
+  () => import('@/components/dashboard/bottom-nav').then(m => ({
+    default: m.BottomNav
+  })),
+  {
+    ssr: false
+  }
+);
+
+// FAB Button
+const FABButtonDynamic = dynamic(
+  () => import('@/components/dashboard/fab-button').then(m => ({
+    default: m.FABButton
+  })),
+  {
+    ssr: false
+  }
+);
+
 export default function DashboardLayout({
   children,
 }: {
@@ -37,23 +58,31 @@ export default function DashboardLayout({
 }) {
   return (
     <AccountFilterProvider>
-      <div className="flex h-screen bg-[#0A0F1C] text-white overflow-hidden">
-        <SubscriptionLockModal />
+      <SidebarProvider>
+        <div className="flex h-screen bg-[#0A0F1C] text-white overflow-hidden">
+          <SubscriptionLockModal />
 
-        {/* Sidebar */}
-        <DashboardSidebarDynamic />
+          {/* Sidebar */}
+          <DashboardSidebarDynamic />
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Header */}
-          <DashboardHeaderDynamic />
+          {/* Main Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Header */}
+            <DashboardHeaderDynamic />
 
-          {/* Content */}
-          <main className="flex-1 overflow-y-auto p-6">
-            {children}
-          </main>
+            {/* Content */}
+            <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+              {children}
+            </main>
+          </div>
+
+          {/* Bottom Navigation - Mobile Only */}
+          <BottomNavDynamic />
+
+          {/* FAB Button - Mobile Only */}
+          <FABButtonDynamic />
         </div>
-      </div>
+      </SidebarProvider>
     </AccountFilterProvider>
   );
 }
