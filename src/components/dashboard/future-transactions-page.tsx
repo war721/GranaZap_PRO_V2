@@ -290,34 +290,36 @@ export function FutureTransactionsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3 md:space-y-6 pb-20 md:pb-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-white">{t('future.title')}</h1>
-            <p className="text-zinc-400 text-sm mt-1">
+      <div className="flex flex-col gap-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-xl md:text-2xl font-bold text-white">{t('future.title')}</h1>
+            <p className="text-zinc-400 text-xs md:text-sm mt-1">
               {t('future.subtitle')}
             </p>
           </div>
           {isRefetching && (
             <div className="flex items-center gap-2 text-xs text-zinc-500">
               <Loader2 className="w-3 h-3 animate-spin" />
-              <span>{t('common.updating')}</span>
+              <span className="hidden sm:inline">{t('common.updating')}</span>
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        
+        {/* Buttons Row */}
+        <div className="grid grid-cols-2 gap-2">
           <button 
             onClick={() => {
               setModalType('entrada');
               setSelectedTransaction(null);
               setIsCreateModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-[#22C55E] hover:bg-[#16A34A] text-white rounded-lg transition-colors font-medium"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[48px] bg-[#22C55E] hover:bg-[#16A34A] text-white rounded-lg transition-colors font-medium text-sm"
           >
-            <Plus className="w-5 h-5" />
-            {t('future.toReceive')}
+            <Plus className="w-4 h-4" />
+            <span>A Receber</span>
           </button>
           <button 
             onClick={() => {
@@ -325,54 +327,54 @@ export function FutureTransactionsPage() {
               setSelectedTransaction(null);
               setIsCreateModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium"
+            className="flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[48px] bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors font-medium text-sm"
           >
-            <Plus className="w-5 h-5" />
-            {t('future.toPay')}
+            <Plus className="w-4 h-4" />
+            <span>A Pagar</span>
           </button>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-3 md:p-4">
-          <div className="flex items-center gap-2 md:gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-2.5 md:p-4">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-yellow-500/10 flex items-center justify-center flex-shrink-0">
               <Clock className="w-4 h-4 md:w-5 md:h-5 text-yellow-500" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] md:text-xs text-zinc-500 truncate">{t('future.pending')}</p>
-              <p className="text-lg md:text-xl font-bold text-white">{stats.totalPending}</p>
+              <p className="text-[10px] md:text-xs text-zinc-500 truncate">Pendentes</p>
+              <p className="text-base md:text-xl font-bold text-white">{stats.totalPending}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-3 md:p-4">
-          <div className="flex items-center gap-2 md:gap-3">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-2.5 md:p-4">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-[#22C55E]/10 flex items-center justify-center flex-shrink-0">
               <TrendingUp className="w-4 h-4 md:w-5 md:h-5 text-[#22C55E]" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] md:text-xs text-zinc-500 truncate">{t('future.toReceive')}</p>
-              <p className="text-sm md:text-lg font-bold text-[#22C55E] truncate">{formatCurrency(stats.totalIncome)}</p>
+              <p className="text-[10px] md:text-xs text-zinc-500 truncate">A Receber</p>
+              <p className="text-xs md:text-lg font-bold text-[#22C55E] truncate">{formatCurrency(stats.totalIncome)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-3 md:p-4">
-          <div className="flex items-center gap-2 md:gap-3">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-2.5 md:p-4">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
               <TrendingDown className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] md:text-xs text-zinc-500 truncate">{t('future.toPay')}</p>
-              <p className="text-sm md:text-lg font-bold text-red-500 truncate">{formatCurrency(stats.totalExpense)}</p>
+              <p className="text-[10px] md:text-xs text-zinc-500 truncate">A Pagar</p>
+              <p className="text-xs md:text-lg font-bold text-red-500 truncate">{formatCurrency(stats.totalExpense)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-3 md:p-4">
-          <div className="flex items-center gap-2 md:gap-3">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-2.5 md:p-4">
+          <div className="flex items-center gap-2">
             <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
               <XCircle className="w-4 h-4 md:w-5 md:h-5 text-red-500" />
             </div>
