@@ -131,14 +131,14 @@ export default function InvestimentosPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div className="h-8 w-48 bg-zinc-800 rounded animate-pulse" />
           <div className="h-10 w-40 bg-zinc-800 rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="bg-[#111827] border border-white/5 rounded-xl p-6 animate-pulse">
+            <div key={i} className="bg-[#111827] border border-white/5 rounded-xl p-4 md:p-6 animate-pulse">
               <div className="h-20" />
             </div>
           ))}
@@ -151,78 +151,79 @@ export default function InvestimentosPage() {
   const hasFilteredPositions = sortedPositions.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">{t('investments.title')}</h1>
-            <span className={`px-3 py-1 rounded-lg text-sm font-medium ${accountFilter === "pj"
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <h1 className="text-xl md:text-2xl font-bold text-white">{t('investments.title')}</h1>
+            <span className={`px-2 md:px-3 py-1 rounded-lg text-xs md:text-sm font-medium ${accountFilter === "pj"
               ? "bg-purple-500/10 text-purple-500 border border-purple-500/20"
               : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
               }`}>
               {accountFilter === "pj" ? t('investments.accountPJ') : t('investments.accountPersonal')}
             </span>
           </div>
-          <p className="text-sm text-zinc-400 mt-1">
+          <p className="text-xs md:text-sm text-zinc-400 mt-1">
             {t('investments.subtitle')}
           </p>
-          <p className="text-xs text-zinc-500 mt-1">
+          <p className="text-[10px] md:text-xs text-zinc-500 mt-1">
             {t('investments.priceUpdate')}
           </p>
         </div>
         <button
           onClick={() => setAddModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 min-h-[44px] bg-blue-600 hover:bg-blue-700 active:scale-95 text-white rounded-lg transition-all text-sm"
         >
           <Plus className="w-4 h-4" />
-          {t('investments.newPosition')}
+          <span className="hidden sm:inline">{t('investments.newPosition')}</span>
+          <span className="sm:hidden">{t('investments.new')}</span>
         </button>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {/* Valor Investido */}
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className="p-2 bg-blue-500/10 rounded-lg">
-              <Wallet className="w-5 h-5 text-blue-500" />
+              <Wallet className="w-4 h-4 md:w-5 md:h-5 text-blue-500" />
             </div>
           </div>
-          <p className="text-sm text-zinc-400 mb-1">{t('investments.summary.investedValue')}</p>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-xs md:text-sm text-zinc-400 mb-1">{t('investments.summary.investedValue')}</p>
+          <p className="text-xl md:text-2xl font-bold text-white">
             {formatCurrency(summary?.valor_investido || 0)}
           </p>
         </div>
 
         {/* Valor Atual */}
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className="p-2 bg-green-500/10 rounded-lg">
-              <DollarSign className="w-5 h-5 text-green-500" />
+              <DollarSign className="w-4 h-4 md:w-5 md:h-5 text-green-500" />
             </div>
           </div>
-          <p className="text-sm text-zinc-400 mb-1">{t('investments.summary.currentValue')}</p>
-          <p className="text-2xl font-bold text-white">
+          <p className="text-xs md:text-sm text-zinc-400 mb-1">{t('investments.summary.currentValue')}</p>
+          <p className="text-xl md:text-2xl font-bold text-white">
             {formatCurrency(summary?.valor_atual || 0)}
           </p>
         </div>
 
         {/* Lucro/Prejuízo */}
-        <div className="bg-[#111827] border border-white/5 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-[#111827] border border-white/5 rounded-xl p-4 md:p-6">
+          <div className="flex items-center justify-between mb-3 md:mb-4">
             <div className={`p-2 rounded-lg ${(summary?.lucro_prejuizo || 0) >= 0
               ? 'bg-green-500/10'
               : 'bg-red-500/10'
               }`}>
-              <TrendingUp className={`w-5 h-5 ${(summary?.lucro_prejuizo || 0) >= 0
+              <TrendingUp className={`w-4 h-4 md:w-5 md:h-5 ${(summary?.lucro_prejuizo || 0) >= 0
                 ? 'text-green-500'
                 : 'text-red-500'
                 }`} />
             </div>
           </div>
-          <p className="text-sm text-zinc-400 mb-1">{t('investments.summary.profitLoss')}</p>
-          <p className={`text-2xl font-bold ${(summary?.lucro_prejuizo || 0) >= 0
+          <p className="text-xs md:text-sm text-zinc-400 mb-1">{t('investments.summary.profitLoss')}</p>
+          <p className={`text-xl md:text-2xl font-bold ${(summary?.lucro_prejuizo || 0) >= 0
             ? 'text-green-500'
             : 'text-red-500'
             }`}>
