@@ -51,11 +51,11 @@ export function GoalsProgress() {
 
   if (loading) {
     return (
-      <div className="bg-[#111827] border border-white/5 rounded-xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold">{t('dashboard.goals.title')}</h3>
+      <div className="bg-[#111827] border border-white/5 rounded-xl p-4 md:p-6">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h3 className="text-base md:text-lg font-semibold">{t('dashboard.goals.title')}</h3>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="h-44 bg-white/5 rounded-xl animate-pulse" />
           ))}
@@ -65,20 +65,20 @@ export function GoalsProgress() {
   }
 
   return (
-    <div className="bg-[#111827] border border-white/5 rounded-xl p-6">
+    <div className="bg-[#111827] border border-white/5 rounded-xl p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-semibold">{t('dashboard.goals.title')}</h3>
+      <div className="flex items-center justify-between mb-4 md:mb-6">
+        <h3 className="text-base md:text-lg font-semibold">{t('dashboard.goals.title')}</h3>
         <button 
           onClick={() => router.push('/dashboard/metas')}
-          className="text-sm text-[#22C55E] hover:text-[#16A34A] font-medium transition-colors"
+          className="text-xs md:text-sm text-[#22C55E] hover:text-[#16A34A] font-medium transition-colors"
         >
           {t('dashboard.recent.viewAll')}
         </button>
       </div>
 
       {/* Goals Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4">
         {goals.length === 0 ? (
           <div className="col-span-full text-center text-zinc-500 py-8">
             {t('dashboard.goals.empty')}
