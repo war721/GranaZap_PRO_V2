@@ -113,7 +113,6 @@ export function useExportPDF() {
       
       return true;
     } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
       return false;
     }
   }, []);

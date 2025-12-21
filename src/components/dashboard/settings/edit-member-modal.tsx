@@ -46,10 +46,8 @@ export function EditMemberModal({ isOpen, onClose, member, onSave }: EditMemberM
   // Atualizar permissões quando o membro mudar
   useEffect(() => {
     if (member?.permissoes) {
-      console.log('🔧 Permissões do membro:', member.permissoes);
       setPermissoes(member.permissoes);
     } else {
-      console.log('⚠️ Membro sem permissões, usando default');
       setPermissoes(permissoesDefault);
     }
     // Resetar loading quando modal abre
@@ -65,22 +63,18 @@ export function EditMemberModal({ isOpen, onClose, member, onSave }: EditMemberM
 
   const handleSave = async () => {
     if (!member) {
-      console.error('❌ Membro não encontrado');
       return;
     }
     
-    console.log('💾 Iniciando salvamento:', { memberId: member.id, permissoes });
     
     setLoading(true);
     try {
       await onSave(member.id, permissoes);
-      console.log('✅ Salvamento concluído');
       // Não fechar imediatamente, esperar um pouco para garantir que salvou
       setTimeout(() => {
         onClose();
       }, 500);
     } catch (error) {
-      console.error('❌ Erro ao salvar:', error);
       alert("Erro ao salvar permissões: " + (error as Error).message);
       setLoading(false);
     }

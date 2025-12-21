@@ -110,7 +110,6 @@ export async function inviteMember(formData: {
 export async function updateMemberPermissions(memberId: number, permissoes: any) {
   const supabase = await createClient();
   
-  console.log('💾 Salvando permissões:', { memberId, permissoes });
   
   // Atualizar permissões do membro
   const { data, error } = await supabase
@@ -120,11 +119,9 @@ export async function updateMemberPermissions(memberId: number, permissoes: any)
     .select();
 
   if (error) {
-    console.error('❌ Erro ao salvar:', error);
     return { success: false, error: error.message };
   }
 
-  console.log('✅ Permissões salvas:', data);
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
@@ -132,7 +129,6 @@ export async function updateMemberPermissions(memberId: number, permissoes: any)
 export async function updateMemberInfo(memberId: number, data: { nome: string; email: string; telefone: string }) {
   const supabase = await createClient();
   
-  console.log('💾 Atualizando cadastro:', { memberId, data });
   
   const { error } = await supabase
     .from("usuarios_dependentes")
@@ -144,11 +140,9 @@ export async function updateMemberInfo(memberId: number, data: { nome: string; e
     .eq("id", memberId);
 
   if (error) {
-    console.error('❌ Erro ao atualizar:', error);
     return { success: false, error: error.message };
   }
 
-  console.log('✅ Cadastro atualizado');
   revalidatePath("/dashboard/settings");
   return { success: true };
 }
@@ -157,7 +151,6 @@ export async function toggleMemberStatus(memberId: number, currentStatus: string
   const supabase = await createClient();
   
   const newStatus = currentStatus === 'ativo' ? 'inativo' : 'ativo';
-  console.log('🔄 Alterando status:', { memberId, de: currentStatus, para: newStatus });
   
   const { error } = await supabase
     .from("usuarios_dependentes")
@@ -165,11 +158,9 @@ export async function toggleMemberStatus(memberId: number, currentStatus: string
     .eq("id", memberId);
 
   if (error) {
-    console.error('❌ Erro ao alterar status:', error);
     return { success: false, error: error.message };
   }
 
-  console.log('✅ Status alterado');
   revalidatePath("/dashboard/settings");
   return { success: true, newStatus };
 }

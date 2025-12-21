@@ -72,7 +72,6 @@ export async function PUT(
           { status: 404 }
         );
       }
-      console.error('❌ Erro ao atualizar posição:', error);
       return NextResponse.json(
         { error: 'Erro ao atualizar posição' },
         { status: 500 }
@@ -82,7 +81,6 @@ export async function PUT(
     return NextResponse.json({ position });
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/positions/[id]:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -132,7 +130,6 @@ export async function DELETE(
           { status: 404 }
         );
       }
-      console.error('❌ Erro ao excluir posição:', error);
       return NextResponse.json(
         { error: 'Erro ao excluir posição' },
         { status: 500 }
@@ -142,7 +139,6 @@ export async function DELETE(
     return NextResponse.json({ success: true });
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/positions/[id]:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

@@ -50,13 +50,11 @@ export function useUser() {
             is_dependente: false
           } as UserProfile
         };
-        console.log('✅ Usuário principal encontrado:', finalProfile.profile);
 
         // Salvar no localStorage para evitar flash no refresh
         try {
           localStorage.setItem('user_profile_cache', JSON.stringify(finalProfile));
         } catch (e) {
-          console.error('Erro ao salvar cache do perfil:', e);
         }
 
         return finalProfile;
@@ -95,13 +93,11 @@ export function useUser() {
           } as UserProfile
         };
 
-        console.log('✅ DEPENDENTE - Profile completo:', finalProfile.profile);
 
         // Salvar no localStorage para evitar flash no refresh
         try {
           localStorage.setItem('user_profile_cache', JSON.stringify(finalProfile));
         } catch (e) {
-          console.error('Erro ao salvar cache do perfil:', e);
         }
 
         return finalProfile;
@@ -119,7 +115,6 @@ export function useUser() {
             return JSON.parse(cached);
           }
         } catch (e) {
-          console.error('Erro ao carregar cache do perfil:', e);
         }
       }
       return undefined;

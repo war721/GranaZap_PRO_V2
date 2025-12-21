@@ -29,14 +29,12 @@ export default function AdminTestPage() {
     try {
       // Verificar autenticação
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('User:', user);
       
       if (!user) {
         throw new Error('Usuário não autenticado');
       }
       
       const { data, error } = await supabase.rpc('admin_list_plans');
-      console.log('Response:', { data, error });
       
       if (error) {
         throw {
@@ -51,7 +49,6 @@ export default function AdminTestPage() {
       setResult({ plans: data });
       setError(null);
     } catch (err: any) {
-      console.error('Erro completo:', err);
       setError(err);
       setResult(null);
     } finally {

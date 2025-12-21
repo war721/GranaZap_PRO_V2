@@ -45,7 +45,6 @@ export async function GET(request: NextRequest) {
     }
 
     if (summaryError) {
-      console.error('❌ Erro ao buscar resumo:', summaryError);
       return NextResponse.json(
         { error: 'Erro ao buscar resumo' },
         { status: 500 }
@@ -60,7 +59,6 @@ export async function GET(request: NextRequest) {
       .eq('tipo_conta', tipoConta);
 
     if (positionsError) {
-      console.error('❌ Erro ao buscar posições:', positionsError);
     }
 
     // Calcular distribuição por tipo
@@ -92,7 +90,6 @@ export async function GET(request: NextRequest) {
       .eq('tipo_conta', tipoConta);
 
     if (dividendsError) {
-      console.error('⚠️ Erro ao buscar dividendos:', dividendsError);
     }
 
     const totalDividends = dividendsData?.reduce(
@@ -107,7 +104,6 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/summary:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

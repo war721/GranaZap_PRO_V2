@@ -27,7 +27,6 @@ export function BrandingStyleInjector() {
                 document.head.insertBefore(style, document.head.firstChild);
               }
             } catch (e) {
-              console.error('Erro ao aplicar branding:', e);
             }
           })();
         `,

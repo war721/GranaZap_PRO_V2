@@ -70,24 +70,14 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('🔄 Iniciando transferência:', {
-        origem: formData.sourceAccountId,
-        destino: formData.destinationAccountId,
-        valor: amount,
-        data: formData.date,
-        tipo_conta: accountFilter
-      });
-
       // Buscar usuario_id
       const { data: usuarioIdData, error: usuarioError } = await supabase
         .rpc('get_usuario_id_from_auth');
       
       if (usuarioError || !usuarioIdData) {
-        console.error('❌ Erro ao buscar usuario_id:', usuarioError);
         throw new Error('Erro ao validar usuário');
       }
 
-      console.log('👤 Usuario ID:', usuarioIdData);
 
       // Buscar ou criar categoria "Transferência"
       let categoriaId: number;
@@ -103,9 +93,7 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
 
       if (categoriaExistente) {
         categoriaId = categoriaExistente.id;
-        console.log('📂 Usando categoria existente:', categoriaId);
       } else {
-        console.log('📂 Criando categoria Transferência...');
         const { data: novaCategoria, error: catError } = await supabase
           .from('categoria_trasacoes')
           .insert({
@@ -119,12 +107,10 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
           .single();
 
         if (catError || !novaCategoria) {
-          console.error('❌ Erro ao criar categoria:', catError);
           throw new Error(`Erro ao criar categoria: ${catError?.message}`);
         }
         
         categoriaId = novaCategoria.id;
-        console.log('📂 Categoria criada:', categoriaId);
       }
 
       // Formatar data
@@ -133,7 +119,6 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
       const descricao = formData.description || 'Transferência entre contas';
 
       // 1. Criar transação de SAÍDA na conta origem
-      console.log('💸 Criando transação de saída...');
       const { error: saidaError } = await supabase.from('transacoes').insert({
         usuario_id: usuarioIdData,
         tipo_conta: accountFilter,
@@ -148,14 +133,11 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
       });
 
       if (saidaError) {
-        console.error('❌ Erro ao criar saída:', saidaError);
         throw new Error(`Erro ao criar transação de saída: ${saidaError.message}`);
       }
 
-      console.log('✅ Saída criada');
 
       // 2. Criar transação de ENTRADA na conta destino
-      console.log('💰 Criando transação de entrada...');
       const { error: entradaError } = await supabase.from('transacoes').insert({
         usuario_id: usuarioIdData,
         tipo_conta: accountFilter,
@@ -170,12 +152,9 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
       });
 
       if (entradaError) {
-        console.error('❌ Erro ao criar entrada:', entradaError);
         throw new Error(`Erro ao criar transação de entrada: ${entradaError.message}`);
       }
 
-      console.log('✅ Entrada criada');
-      console.log('✅ Transferência concluída com sucesso!');
 
       setFeedback({ type: 'success', message: t('accounts.transferSuccess') });
       
@@ -186,7 +165,6 @@ export function TransferModal({ isOpen, onClose, onSuccess, initialSourceAccount
       }, 1500);
 
     } catch (error: any) {
-      console.error('💥 Erro ao realizar transferência:', error);
       setFeedback({ type: 'error', message: error?.message || t('accounts.errorTransfer') });
     } finally {
       setLoading(false);

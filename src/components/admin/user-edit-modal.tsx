@@ -76,17 +76,14 @@ export function UserEditModal({
       });
 
       if (error) {
-        console.error('Erro ao criar conta:', error);
         throw error;
       }
       
-      console.log('Conta criada com sucesso:', data);
       setShowSuccessModal(true);
       setShowCreateLoginSection(false);
       setSenha('');
       setConfirmarSenha('');
     } catch (error: any) {
-      console.error('Erro catch:', error);
       alert('Erro ao criar conta de login: ' + error.message);
     } finally {
       setCreatingLogin(false);

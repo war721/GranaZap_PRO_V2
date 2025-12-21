@@ -65,7 +65,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
           setLoading(false);
         }
       } catch (e) {
-        console.error('Erro ao carregar cache:', e);
       }
     }
   }, []);
@@ -110,7 +109,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
             try {
               localStorage.setItem('branding_settings', JSON.stringify(newSettings));
             } catch (e) {
-              console.error('Erro ao salvar branding no localStorage:', e);
             }
 
             // Opcional: Atualizar meta theme-color
@@ -120,7 +118,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
         }
       }
     } catch (error) {
-      console.error('Erro ao carregar branding:', error);
     } finally {
       setLoading(false);
     }
@@ -141,7 +138,6 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
           document.documentElement.style.setProperty('--ring', settings.primaryColor);
         }
       } catch (e) {
-        console.error('Erro ao aplicar cores:', e);
       }
     }
   }, []);

@@ -104,7 +104,6 @@ export function ReportsPage() {
       
       await exportReportToPDF(reportData, filename);
     } catch (error) {
-      console.error('Erro ao exportar PDF:', error);
     } finally {
       setIsExporting(false);
     }

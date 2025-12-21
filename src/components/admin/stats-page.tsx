@@ -68,7 +68,6 @@ export function StatsPage() {
         usuarios_por_plano,
       });
     } catch (error) {
-      console.error('Erro ao buscar estatísticas:', error);
     } finally {
       setLoading(false);
     }

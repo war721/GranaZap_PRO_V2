@@ -20,7 +20,6 @@ export function useInvestments(tipoConta: TipoConta) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('📈 Buscando posições de investimento:', { userId: user.id, tipoConta });
 
       // Usar a view que já tem todos os cálculos
       const { data, error } = await supabase
@@ -30,13 +29,11 @@ export function useInvestments(tipoConta: TipoConta) {
         .eq('tipo_conta', tipoConta)
         .order('created_at', { ascending: false });
 
-      console.log('📈 Resultado posições:', { total: data?.length || 0, error });
 
       if (error) throw error;
 
       setPositions(data || []);
     } catch (error) {
-      console.error('❌ Erro ao buscar posições:', error);
     } finally {
       setLoading(false);
     }

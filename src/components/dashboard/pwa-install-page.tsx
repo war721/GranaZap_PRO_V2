@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Download,
   Smartphone,
@@ -22,8 +22,12 @@ export function PWAInstallPage() {
   // URL do vídeo tutorial puxada do painel admin
   const videoUrl = whatsappConfig?.video_url_instalacao || '';
   
-  // Get hostname only on client side
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'seu-dominio.com';
+  // Get hostname only on client side to avoid hydration mismatch
+  const [hostname, setHostname] = useState('seu-dominio.com');
+  
+  useEffect(() => {
+    setHostname(window.location.hostname);
+  }, []);
 
   const steps = [
     {

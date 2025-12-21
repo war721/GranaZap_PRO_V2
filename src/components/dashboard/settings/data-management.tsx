@@ -12,7 +12,6 @@ import { ClearDataModal } from "@/components/ui/clear-data-modal";
 import { DeleteAccountModal } from "@/components/ui/delete-account-modal";
 import { SuccessNotificationModal } from "@/components/ui/success-notification-modal";
 import { ErrorModal } from "@/components/ui/error-modal";
-import * as XLSX from 'xlsx';
 
 export function DataManagement() {
   const { t } = useLanguage();
@@ -127,52 +126,69 @@ export function DataManagement() {
         'Tipo Conta': c.tipo_conta === 'pessoal' ? 'Pessoal' : 'Empresarial (PJ)'
       }));
 
-      // Criar workbook
-      const wb = XLSX.utils.book_new();
+      // Função para converter JSON para CSV
+      const jsonToCSV = (data: any[], title: string) => {
+        if (!data || data.length === 0) return '';
+        
+        const headers = Object.keys(data[0]);
+        const csvRows = [
+          `\n=== ${title} ===`,
+          headers.join(','),
+          ...data.map(row => 
+            headers.map(header => {
+              const value = row[header];
+              return typeof value === 'string' && value.includes(',') 
+                ? `"${value}"` 
+                : value;
+            }).join(',')
+          )
+        ];
+        return csvRows.join('\n');
+      };
 
-      // Adicionar abas
+      // Criar conteúdo CSV
+      let csvContent = `Exportação de Dados - ${settings.appName || 'GranaZap'}\nData: ${new Date().toLocaleDateString('pt-BR')}\n`;
+      
       if (receitasFormatadas.length > 0) {
-        const wsReceitas = XLSX.utils.json_to_sheet(receitasFormatadas);
-        XLSX.utils.book_append_sheet(wb, wsReceitas, 'Receitas');
+        csvContent += jsonToCSV(receitasFormatadas, 'Receitas');
       }
-
+      
       if (despesasFormatadas.length > 0) {
-        const wsDespesas = XLSX.utils.json_to_sheet(despesasFormatadas);
-        XLSX.utils.book_append_sheet(wb, wsDespesas, 'Despesas');
+        csvContent += jsonToCSV(despesasFormatadas, 'Despesas');
       }
-
+      
       if (lancamentosFuturosFormatados.length > 0) {
-        const wsLancamentos = XLSX.utils.json_to_sheet(lancamentosFuturosFormatados);
-        XLSX.utils.book_append_sheet(wb, wsLancamentos, 'Lançamentos Futuros');
+        csvContent += jsonToCSV(lancamentosFuturosFormatados, 'Lançamentos Futuros');
       }
-
+      
       if (contasFormatadas.length > 0) {
-        const wsContas = XLSX.utils.json_to_sheet(contasFormatadas);
-        XLSX.utils.book_append_sheet(wb, wsContas, 'Contas Bancárias');
+        csvContent += jsonToCSV(contasFormatadas, 'Contas Bancárias');
       }
-
+      
       if (cartoesFormatados.length > 0) {
-        const wsCartoes = XLSX.utils.json_to_sheet(cartoesFormatados);
-        XLSX.utils.book_append_sheet(wb, wsCartoes, 'Cartões de Crédito');
+        csvContent += jsonToCSV(cartoesFormatados, 'Cartões de Crédito');
       }
 
-      // Verificar se há dados para exportar
-      if (wb.SheetNames.length === 0) {
-        alert('Você ainda não possui dados para exportar.');
-        setShowExportModal(false);
+      // Verificar se há dados
+      if (!csvContent.includes('===')) {
+        setErrorMessage('Não há dados para exportar.');
+        setShowErrorModal(true);
         setExporting(false);
         return;
       }
 
-      // Gerar arquivo Excel
-      const fileName = `${(settings.appName || 'granazap').toLowerCase().replace(/\s+/g, '_')}_dados_completos_${new Date().toISOString().split('T')[0]}.xlsx`;
-      XLSX.writeFile(wb, fileName);
+      // Gerar arquivo CSV
+      const fileName = `${(settings.appName || 'granazap').toLowerCase().replace(/\s+/g, '_')}_dados_completos_${new Date().toISOString().split('T')[0]}.csv`;
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName;
+      link.click();
 
       setShowExportModal(false);
       setShowExportSuccessModal(true);
 
     } catch (error: any) {
-      console.error('Erro ao exportar dados:', error);
       setShowExportModal(false);
       setShowErrorModal(true);
       setErrorMessage(error.message || 'Erro desconhecido ao exportar dados');
@@ -251,7 +267,6 @@ export function DataManagement() {
       }, 2000);
 
     } catch (error: any) {
-      console.error('Erro ao deletar dados:', error);
       setShowClearModal(false);
       setShowErrorModal(true);
       setErrorMessage(error.message || 'Erro desconhecido ao deletar dados');
@@ -308,7 +323,7 @@ export function DataManagement() {
             <div>
               <h4 className="font-medium text-white">Exportar Dados Completos</h4>
               <p className="text-sm text-zinc-400 mt-1">
-                Baixe um arquivo Excel (.xlsx) com todas as suas informações financeiras organizadas em abas.
+                Baixe um arquivo CSV com todas as suas informações financeiras organizadas por seções.
               </p>
             </div>
           </div>

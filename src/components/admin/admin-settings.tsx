@@ -15,7 +15,6 @@ export function AdminSettings() {
 
   // Carregar dados quando settings mudar
   useEffect(() => {
-    console.log('📥 Settings carregadas:', settings);
     if (settings) {
       // @ts-ignore - Novos campos ainda não estão no tipo
       setBloquearCadastro(settings.bloquear_cadastro_novos_usuarios || false);
@@ -23,7 +22,6 @@ export function AdminSettings() {
   }, [settings]);
 
   const handleSave = async () => {
-    console.log('💾 Salvando configurações administrativas...');
     
     setLoading(true);
     try {
@@ -31,7 +29,6 @@ export function AdminSettings() {
         bloquear_cadastro_novos_usuarios: bloquearCadastro
       });
 
-      console.log('📥 Resultado:', result);
 
       if (result.success) {
         setShowSuccessModal(true);
@@ -41,7 +38,6 @@ export function AdminSettings() {
         alert('❌ Erro ao salvar: ' + result.error);
       }
     } catch (err) {
-      console.error('❌ Erro:', err);
       alert('❌ Erro ao salvar configurações');
     } finally {
       setLoading(false);

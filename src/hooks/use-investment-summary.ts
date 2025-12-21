@@ -15,7 +15,6 @@ export function useInvestmentSummary(tipoConta: TipoConta) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('💰 Buscando resumo de investimentos:', { userId: user.id, tipoConta });
 
       // Buscar resumo da view
       const { data: summaryData, error: summaryError } = await supabase
@@ -74,7 +73,6 @@ export function useInvestmentSummary(tipoConta: TipoConta) {
         .eq('tipo_conta', tipoConta);
 
       if (dividendsError) {
-        console.error('⚠️ Erro ao buscar dividendos:', dividendsError);
       }
 
       const totalDividends = dividendsData?.reduce((sum, d) => sum + (d.valor_total_proventos || 0), 0) || 0;
@@ -89,13 +87,7 @@ export function useInvestmentSummary(tipoConta: TipoConta) {
         byType: byType.sort((a, b) => b.currentValue - a.currentValue),
       });
 
-      console.log('💰 Resumo carregado:', { 
-        totalAssets: summaryData?.total_ativos || 0,
-        totalValue: summaryData?.valor_atual || 0 
-      });
-
     } catch (error) {
-      console.error('❌ Erro ao buscar resumo:', error);
     } finally {
       setLoading(false);
     }

@@ -11,11 +11,9 @@ export async function updateWhatsAppConfig(data: {
 }) {
   const supabase = await createClient();
   
-  console.log('💾 [SERVER] Salvando configurações WhatsApp:', data);
   
   // Verificar usuário atual
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('👤 [SERVER] Usuário:', user?.id);
   
   const { data: result, error } = await supabase
     .from("configuracoes_sistema")
@@ -30,11 +28,9 @@ export async function updateWhatsAppConfig(data: {
     .select();
 
   if (error) {
-    console.error('❌ [SERVER] Erro ao atualizar:', error);
     return { success: false, error: error.message };
   }
 
-  console.log('✅ [SERVER] Configurações atualizadas:', result);
   revalidatePath("/admin/settings");
   return { success: true };
 }

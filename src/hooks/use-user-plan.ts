@@ -25,13 +25,11 @@ export function useUserPlan() {
           .single();
 
         if (error) {
-          console.error('❌ Erro ao buscar permissões do plano:', error);
           setPermiteModoPJ(true); // Default true em caso de erro
         } else {
           setPermiteModoPJ(data?.permite_modo_pj !== false); // Default true
         }
       } catch (err) {
-        console.error('❌ Erro:', err);
         setPermiteModoPJ(true); // Default true em caso de erro
       } finally {
         setLoading(false);

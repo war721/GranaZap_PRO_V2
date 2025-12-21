@@ -37,12 +37,10 @@ export function useAdminUsers(searchTerm: string, page: number, limit: number) {
     try {
       const { data, error } = await supabase.rpc('admin_get_user_stats');
       if (error) {
-        console.error('Erro ao buscar stats:', error.message);
         return;
       }
       setStats(data);
     } catch (error: any) {
-      console.error('Erro stats:', error.message);
     }
   };
 
@@ -56,13 +54,11 @@ export function useAdminUsers(searchTerm: string, page: number, limit: number) {
       });
       
       if (error) {
-        console.error('Erro ao buscar usuários:', error.message);
         return;
       }
       
       setUsers(data || []);
     } catch (error: any) {
-      console.error('Erro:', error.message);
     } finally {
       setLoading(false);
     }
@@ -70,8 +66,6 @@ export function useAdminUsers(searchTerm: string, page: number, limit: number) {
 
   const updateUser = async (userId: number, updates: Partial<AdminUser>) => {
     try {
-      console.log('🔄 Atualizando usuário:', userId);
-      console.log('📝 Dados enviados:', updates);
       
       // Converter plano_id se vier como string
       const planoId = updates.plano_id ? Number(updates.plano_id) : undefined;
@@ -89,15 +83,12 @@ export function useAdminUsers(searchTerm: string, page: number, limit: number) {
       });
       
       if (error) {
-        console.error('❌ Erro ao atualizar:', error);
         throw error;
       }
       
-      console.log('✅ Usuário atualizado com sucesso!');
       await fetchUsers();
       return { success: true };
     } catch (error: any) {
-      console.error('❌ Erro final:', error.message);
       return { success: false, error: error.message };
     }
   };

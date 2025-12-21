@@ -66,15 +66,11 @@ export function SharedManagement() {
   };
 
   const handleSavePermissions = async (memberId: number, permissoes: any) => {
-    console.log('📤 Enviando para action:', { memberId, permissoes });
     const result = await updateMemberPermissions(memberId, permissoes);
-    console.log('📥 Resposta da action:', result);
     if (result.success) {
-      console.log('✅ Sucesso! Recarregando lista...');
       success(t('success.permissionsUpdated'));
       refetch();
     } else {
-      console.error('❌ Erro na action:', result.error);
       error('Erro ao salvar permissões: ' + result.error);
       throw new Error(result.error);
     }

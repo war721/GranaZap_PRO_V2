@@ -32,7 +32,6 @@ export async function GET(request: NextRequest) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Erro ao buscar posições:', error);
       return NextResponse.json(
         { error: 'Erro ao buscar posições' },
         { status: 500 }
@@ -42,7 +41,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ positions });
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/positions:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -104,7 +102,6 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('❌ Erro ao criar posição:', error);
       return NextResponse.json(
         { error: 'Erro ao criar posição' },
         { status: 500 }
@@ -114,7 +111,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ position }, { status: 201 });
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/positions:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

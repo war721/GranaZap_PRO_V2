@@ -77,7 +77,6 @@ export function UserDetailsModal({
       });
 
       if (error) {
-        console.error('Erro ao resetar senha:', error);
         throw new Error(error.message || 'Erro ao resetar senha');
       }
       
@@ -86,7 +85,6 @@ export function UserDetailsModal({
       onRefresh();
       return true;
     } catch (error: any) {
-      console.error('Erro catch:', error);
       // Deixar o modal de reset mostrar o erro
       throw error;
     }

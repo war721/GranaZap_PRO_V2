@@ -28,7 +28,6 @@ async function fetchCreditCards(
 ): Promise<CreditCard[]> {
   const supabase = createClient();
 
-  console.log('💳 Buscando cartões:', { accountFilter });
 
   const { data, error } = await supabase
     .from('cartoes_credito')
@@ -37,7 +36,6 @@ async function fetchCreditCards(
     .eq('ativo', true)
     .order('created_at', { ascending: false });
 
-  console.log('💳 Resultado cartões:', { total: data?.length || 0, error });
 
   if (error) throw error;
 

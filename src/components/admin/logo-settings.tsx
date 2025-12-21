@@ -21,7 +21,6 @@ export function LogoSettings() {
 
   // Carregar dados quando settings mudar
   useEffect(() => {
-    console.log('📥 Settings carregadas:', settings);
     if (settings) {
       setShowSidebarLogo(settings.show_sidebar_logo || false);
       setShowSidebarName(settings.show_sidebar_name !== false);
@@ -34,7 +33,6 @@ export function LogoSettings() {
   }, [settings]);
 
   const handleSave = async () => {
-    console.log('💾 Salvando configurações de logo...');
     
     setLoading(true);
     try {
@@ -48,7 +46,6 @@ export function LogoSettings() {
         favicon_url: faviconUrl
       });
 
-      console.log('📥 Resultado:', result);
 
       if (result.success) {
         setShowSuccessModal(true);
@@ -58,7 +55,6 @@ export function LogoSettings() {
         alert('❌ Erro ao salvar: ' + result.error);
       }
     } catch (err) {
-      console.error('❌ Erro:', err);
       alert('❌ Erro ao salvar configurações');
     } finally {
       setLoading(false);

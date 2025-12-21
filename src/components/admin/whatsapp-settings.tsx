@@ -18,7 +18,6 @@ export function WhatsAppSettings() {
 
   // Carregar dados quando config mudar
   useEffect(() => {
-    console.log('📥 Config carregada:', config);
     if (config) {
       setHabilitado(config.whatsapp_enabled || false);
       setUrlWhatsApp(config.whatsapp_contact_url || '');
@@ -28,8 +27,6 @@ export function WhatsAppSettings() {
   }, [config]);
 
   const handleSave = async () => {
-    console.log('💾 Iniciando salvamento...');
-    console.log('Dados:', { habilitado, urlWhatsApp, textoBotao });
     
     setLoading(true);
     try {
@@ -40,7 +37,6 @@ export function WhatsAppSettings() {
         video_url_instalacao: videoUrlInstalacao
       });
 
-      console.log('📥 Resultado:', result);
 
       if (result.success) {
         setShowSuccessModal(true);
@@ -49,7 +45,6 @@ export function WhatsAppSettings() {
         alert('❌ Erro ao salvar: ' + result.error);
       }
     } catch (err) {
-      console.error('❌ Erro:', err);
       alert('❌ Erro ao salvar configurações');
     } finally {
       setLoading(false);

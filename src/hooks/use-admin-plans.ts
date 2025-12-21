@@ -27,17 +27,14 @@ export function useAdminPlans() {
   const fetchPlans = async () => {
     setLoading(true);
     try {
-      console.log('🔍 Chamando admin_list_plans...');
       
       const { data, error } = await supabase.rpc('admin_list_plans');
       
       if (error) {
-        console.error('❌ Erro:', error.message);
         alert(`Erro ao buscar planos: ${error.message}`);
         return;
       }
       
-      console.log('✅ Planos recebidos:', data?.length || 0, 'planos');
       
       // Converter recursos de JSONB para array
       const plansFormatted = (data || []).map((plan: any) => ({
@@ -48,7 +45,6 @@ export function useAdminPlans() {
       
       setPlans(plansFormatted);
     } catch (error: any) {
-      console.error('❌ Erro catch:', error.message || error);
       alert(`Erro: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setLoading(false);

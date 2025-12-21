@@ -39,7 +39,6 @@ export function useInvestmentAccess() {
           .single();
 
         if (planError) {
-          console.error('❌ Erro ao buscar permissões do plano:', planError);
           setLoading(false);
           return;
         }
@@ -57,7 +56,6 @@ export function useInvestmentAccess() {
           .eq('usuario_id', user.id);
 
         if (countError) {
-          console.error('❌ Erro ao contar ativos:', countError);
         }
 
         const currentAssets = count || 0;
@@ -73,7 +71,6 @@ export function useInvestmentAccess() {
           canAddMore,
         });
       } catch (error) {
-        console.error('❌ Erro ao verificar acesso:', error);
       } finally {
         setLoading(false);
       }

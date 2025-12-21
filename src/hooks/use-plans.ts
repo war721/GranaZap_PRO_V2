@@ -29,7 +29,6 @@ export function usePlans() {
       if (error) throw error;
       setPlans(data || []);
     } catch (error: any) {
-      console.error('Erro ao buscar planos:', error.message);
     } finally {
       setLoading(false);
     }

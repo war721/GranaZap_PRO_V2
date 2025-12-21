@@ -26,7 +26,6 @@ export function useAccounts(tipoConta: 'pessoal' | 'pj') {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('🏦 Buscando contas:', { userId: user.id, tipoConta });
 
       const { data, error } = await supabase
         .from('contas_bancarias')
@@ -36,13 +35,11 @@ export function useAccounts(tipoConta: 'pessoal' | 'pj') {
         .order('is_default', { ascending: false })
         .order('nome', { ascending: true });
 
-      console.log('🏦 Resultado contas:', { total: data?.length || 0, error });
 
       if (error) throw error;
 
       setAccounts(data || []);
     } catch (error) {
-      console.error('❌ Erro ao buscar contas:', error);
     } finally {
       setLoading(false);
     }

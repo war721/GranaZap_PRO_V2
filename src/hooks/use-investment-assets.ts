@@ -11,7 +11,6 @@ export function useInvestmentAssets(type?: AssetType) {
       setLoading(true);
       const supabase = createClient();
 
-      console.log('📊 Buscando ativos:', { type });
 
       let query = supabase
         .from('investment_assets')
@@ -25,13 +24,11 @@ export function useInvestmentAssets(type?: AssetType) {
 
       const { data, error } = await query;
 
-      console.log('📊 Resultado ativos:', { total: data?.length || 0, error });
 
       if (error) throw error;
 
       setAssets(data || []);
     } catch (error) {
-      console.error('❌ Erro ao buscar ativos:', error);
     } finally {
       setLoading(false);
     }
@@ -52,7 +49,6 @@ export function useInvestmentAssets(type?: AssetType) {
       .single();
 
     if (error) {
-      console.log('ℹ️ Ativo não encontrado:', ticker);
       return null;
     }
 

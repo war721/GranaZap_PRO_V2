@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
     );
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/assets:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }
@@ -117,7 +116,6 @@ export async function GET(request: NextRequest) {
     const { data: assets, error } = await query;
 
     if (error) {
-      console.error('❌ Erro ao buscar ativos:', error);
       return NextResponse.json(
         { error: 'Erro ao buscar ativos' },
         { status: 500 }
@@ -127,7 +125,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ assets });
 
   } catch (error) {
-    console.error('❌ Erro na API /api/investments/assets:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },
       { status: 500 }

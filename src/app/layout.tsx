@@ -37,7 +37,6 @@ export async function generateMetadata(): Promise<Metadata> {
       } : undefined,
     };
   } catch (error) {
-    console.error('Error loading metadata:', error);
     return {
       title: 'GranaZap',
       description: 'Sistema de gestão financeira',

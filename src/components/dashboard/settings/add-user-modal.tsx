@@ -47,7 +47,6 @@ export function AddUserModal({ isOpen, onClose, onSuccess }: AddUserModalProps) 
     } catch (error: any) {
       setErrorMessage(error?.message || "Erro inesperado ao adicionar usuário");
       setShowErrorModal(true);
-      console.error(error);
     } finally {
       setLoading(false);
     }

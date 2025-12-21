@@ -71,23 +71,14 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
 
-      console.log('💼 Iniciando Pró-labore (PJ → Pessoal):', {
-        origem: formData.sourceAccountId,
-        destino: formData.destinationAccountId,
-        valor: amount,
-        data: formData.date
-      });
-
       // Buscar usuario_id
       const { data: usuarioIdData, error: usuarioError } = await supabase
         .rpc('get_usuario_id_from_auth');
 
       if (usuarioError || !usuarioIdData) {
-        console.error('❌ Erro ao buscar usuario_id:', usuarioError);
         throw new Error('Erro ao validar usuário');
       }
 
-      console.log('👤 Usuario ID:', usuarioIdData);
 
       // Buscar ou criar categoria "Pró-labore" para PJ
       let categoriaIdPJ: number;
@@ -103,9 +94,7 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
 
       if (categoriaExistentePJ) {
         categoriaIdPJ = categoriaExistentePJ.id;
-        console.log('📂 Usando categoria Pró-labore PJ existente:', categoriaIdPJ);
       } else {
-        console.log('📂 Criando categoria Pró-labore PJ...');
         const { data: novaCategoriaPJ, error: catError } = await supabase
           .from('categoria_trasacoes')
           .insert({
@@ -119,12 +108,10 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
           .single();
 
         if (catError || !novaCategoriaPJ) {
-          console.error('❌ Erro ao criar categoria PJ:', catError);
           throw new Error(`Erro ao criar categoria: ${catError?.message}`);
         }
 
         categoriaIdPJ = novaCategoriaPJ.id;
-        console.log('📂 Categoria PJ criada:', categoriaIdPJ);
       }
 
       // Buscar ou criar categoria "Pró-labore" para Pessoal
@@ -141,9 +128,7 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
 
       if (categoriaExistentePessoal) {
         categoriaIdPessoal = categoriaExistentePessoal.id;
-        console.log('📂 Usando categoria Pró-labore Pessoal existente:', categoriaIdPessoal);
       } else {
-        console.log('📂 Criando categoria Pró-labore Pessoal...');
         const { data: novaCategoriaPessoal, error: catError } = await supabase
           .from('categoria_trasacoes')
           .insert({
@@ -157,12 +142,10 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
           .single();
 
         if (catError || !novaCategoriaPessoal) {
-          console.error('❌ Erro ao criar categoria Pessoal:', catError);
           throw new Error(`Erro ao criar categoria: ${catError?.message}`);
         }
 
         categoriaIdPessoal = novaCategoriaPessoal.id;
-        console.log('📂 Categoria Pessoal criada:', categoriaIdPessoal);
       }
 
       // Formatar data
@@ -171,7 +154,6 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
       const descricao = formData.description || 'Pró-labore';
 
       // 1. Criar transação de SAÍDA na conta PJ
-      console.log('💸 Criando transação de saída (PJ)...');
       const { error: saidaError } = await supabase.from('transacoes').insert({
         usuario_id: usuarioIdData,
         tipo_conta: 'pj',
@@ -186,14 +168,11 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
       });
 
       if (saidaError) {
-        console.error('❌ Erro ao criar saída:', saidaError);
         throw new Error(`Erro ao criar transação de saída: ${saidaError.message}`);
       }
 
-      console.log('✅ Saída PJ criada');
 
       // 2. Criar transação de ENTRADA na conta Pessoal
-      console.log('💰 Criando transação de entrada (Pessoal)...');
       const { error: entradaError } = await supabase.from('transacoes').insert({
         usuario_id: usuarioIdData,
         tipo_conta: 'pessoal',
@@ -208,12 +187,9 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
       });
 
       if (entradaError) {
-        console.error('❌ Erro ao criar entrada:', entradaError);
         throw new Error(`Erro ao criar transação de entrada: ${entradaError.message}`);
       }
 
-      console.log('✅ Entrada Pessoal criada');
-      console.log('✅ Pró-labore concluído com sucesso!');
 
       setFeedback({ type: 'success', message: 'Pró-labore realizado com sucesso!' });
 
@@ -224,7 +200,6 @@ export function ProLaboreModal({ isOpen, onClose, onSuccess }: ProLaboreModalPro
       }, 1500);
 
     } catch (error: any) {
-      console.error('💥 Erro ao realizar pró-labore:', error);
       setFeedback({ type: 'error', message: error?.message || 'Erro ao realizar pró-labore' });
     } finally {
       setLoading(false);

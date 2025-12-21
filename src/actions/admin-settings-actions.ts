@@ -8,11 +8,9 @@ export async function updateAdminSettings(data: {
 }) {
   const supabase = await createClient();
   
-  console.log('💾 [SERVER] Salvando configurações administrativas:', data);
   
   // Verificar usuário atual
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('👤 [SERVER] Usuário:', user?.id);
   
   const { data: result, error } = await supabase
     .from("configuracoes_sistema")
@@ -24,11 +22,9 @@ export async function updateAdminSettings(data: {
     .select();
 
   if (error) {
-    console.error('❌ [SERVER] Erro ao atualizar:', error);
     return { success: false, error: error.message };
   }
 
-  console.log('✅ [SERVER] Configurações atualizadas:', result);
   revalidatePath("/admin/settings");
   return { success: true };
 }
@@ -44,7 +40,6 @@ export async function updateLogoSettings(data: {
 }) {
   const supabase = await createClient();
   
-  console.log('💾 [SERVER] Salvando configurações de logo:', data);
   
   const { data: result, error } = await supabase
     .from("configuracoes_sistema")
@@ -62,11 +57,9 @@ export async function updateLogoSettings(data: {
     .select();
 
   if (error) {
-    console.error('❌ [SERVER] Erro ao atualizar:', error);
     return { success: false, error: error.message };
   }
 
-  console.log('✅ [SERVER] Configurações de logo atualizadas:', result);
   revalidatePath("/admin/settings");
   revalidatePath("/dashboard");
   return { success: true };

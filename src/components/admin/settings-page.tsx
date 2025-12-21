@@ -52,7 +52,6 @@ export function SettingsPage() {
         setSettings(newSettings);
       }
     } catch (error) {
-      console.error('Erro ao carregar configurações:', error);
     }
   };
 
@@ -85,7 +84,6 @@ export function SettingsPage() {
         window.location.reload();
       }, 1500);
     } catch (error: any) {
-      console.error('Erro ao salvar configurações:', error);
       alert(`Erro ao salvar configurações: ${error.message || 'Erro desconhecido'}`);
     } finally {
       setSaving(false);

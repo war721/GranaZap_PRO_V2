@@ -78,7 +78,6 @@ async function fetchAllTransactions(
   const startDateStr = formatLocalDate(startDate);
   const endDateStr = formatLocalDate(endDate);
 
-  console.log('🔍 Buscando TODAS transações (incluindo transferências):', { userId, accountFilter, startDateStr, endDateStr, userFilter });
 
   let query = supabase
     .from('transacoes')
@@ -103,7 +102,6 @@ async function fetchAllTransactions(
     .order('data', { ascending: false })
     .limit(1000);
 
-  console.log('📊 Resultado TODAS transações:', { total: data?.length || 0, error });
 
   if (error) throw error;
 
