@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useDeferredValue } from "react";
+import { useState, useMemo, useDeferredValue, useEffect } from "react";
 import { Plus, Search, Filter, Calendar, TrendingUp, TrendingDown, Loader2, Clock, CheckCircle2, XCircle, Repeat, CreditCard, Edit, Trash2, Settings } from "lucide-react";
 import * as Icons from "lucide-react";
 import { useFutureTransactionsQuery, useFutureTransactionMutations } from "@/hooks/use-future-transactions-query";
@@ -48,6 +48,12 @@ export function FutureTransactionsPage() {
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [mounted, setMounted] = useState(false);
+
+  // Prevent hydration mismatch by only showing loading skeleton on client
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -262,7 +268,12 @@ export function FutureTransactionsPage() {
     invalidateAll();
   };
 
-  if (loading) {
+  // Don't show skeleton on server to prevent hydration mismatch
+  if (loading && !mounted) {
+    return null;
+  }
+
+  if (loading && mounted) {
     return (
       <div className="space-y-3 md:space-y-6 pb-20 md:pb-0">
         {/* Stats Cards Skeleton */}
