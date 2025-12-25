@@ -26,24 +26,62 @@ export async function loginUser(data: LoginData): Promise<LoginResult> {
     });
 
     if (authError) {
-      // Traduzir erros comuns
-      if (authError.message.includes('Invalid login credentials')) {
+      // Debug: Log do erro real do Supabase
+      console.log('Supabase Auth Error:', authError);
+      console.log('Error Message:', authError.message);
+      console.log('Error Status:', authError.status);
+      
+      // Traduzir erros comuns do Supabase para mensagens amigáveis
+      const errorMessage = authError.message.toLowerCase();
+      
+      // Credenciais inválidas (senha errada ou usuário não existe)
+      if (errorMessage.includes('invalid login credentials') || 
+          errorMessage.includes('invalid credentials')) {
         return {
           success: false,
-          error: 'Email ou senha incorretos'
+          error: 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.'
         };
       }
 
-      if (authError.message.includes('Email not confirmed')) {
+      // Email não confirmado
+      if (errorMessage.includes('email not confirmed') || 
+          errorMessage.includes('confirm')) {
         return {
           success: false,
-          error: 'Por favor, confirme seu email antes de fazer login'
+          error: 'Por favor, confirme seu email antes de fazer login. Verifique sua caixa de entrada.'
         };
       }
 
+      // Usuário não encontrado
+      if (errorMessage.includes('user not found') || 
+          errorMessage.includes('no user')) {
+        return {
+          success: false,
+          error: 'Usuário não encontrado. Verifique seu email ou crie uma nova conta.'
+        };
+      }
+
+      // Muitas tentativas
+      if (errorMessage.includes('too many requests') || 
+          errorMessage.includes('rate limit')) {
+        return {
+          success: false,
+          error: 'Muitas tentativas de login. Por favor, aguarde alguns minutos e tente novamente.'
+        };
+      }
+
+      // Email inválido
+      if (errorMessage.includes('invalid email')) {
+        return {
+          success: false,
+          error: 'Email inválido. Verifique o formato do email.'
+        };
+      }
+
+      // Erro genérico (não expor detalhes técnicos)
       return {
         success: false,
-        error: authError.message
+        error: 'Não foi possível fazer login. Verifique suas credenciais e tente novamente.'
       };
     }
 
@@ -58,7 +96,7 @@ export async function loginUser(data: LoginData): Promise<LoginResult> {
     try {
       await supabase.rpc('registrar_acesso_usuario');
     } catch (error) {
-      // Não falha o login
+      // Não falha o login se der erro
     }
 
     return {

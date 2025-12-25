@@ -25,6 +25,7 @@ export function LoginForm() {
   const [showEmailPendingModal, setShowEmailPendingModal] = useState(false);
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [errorTitle, setErrorTitle] = useState("Erro ao fazer login");
   const [pendingEmail, setPendingEmail] = useState("");
   
   // Schema for validation with translations
@@ -69,8 +70,19 @@ export function LoginForm() {
           return;
         }
         
+        // Definir título dinâmico baseado no tipo de erro
+        let title = "Erro ao fazer login";
+        if (result.error?.includes('não encontrado')) {
+          title = "Usuário não encontrado";
+        } else if (result.error?.includes('incorretos')) {
+          title = "Credenciais inválidas";
+        } else if (result.error?.includes('Muitas tentativas')) {
+          title = "Limite de tentativas excedido";
+        }
+        
         // Mostrar modal de erro
-        setErrorMessage(result.error || 'Email ou senha incorretos');
+        setErrorTitle(title);
+        setErrorMessage(result.error || 'Email ou senha incorretos. Verifique suas credenciais.');
         setShowErrorModal(true);
         return;
       }
@@ -79,7 +91,8 @@ export function LoginForm() {
       window.location.href = '/dashboard';
       
     } catch (error: any) {
-      setErrorMessage('Erro ao fazer login. Tente novamente.');
+      setErrorTitle('Erro ao fazer login');
+      setErrorMessage(error?.message || 'Erro ao fazer login. Tente novamente.');
       setShowErrorModal(true);
     }
   };
@@ -177,7 +190,7 @@ export function LoginForm() {
       <ErrorModal
         isOpen={showErrorModal}
         onClose={() => setShowErrorModal(false)}
-        title="Erro ao fazer login"
+        title={errorTitle}
         message={errorMessage}
       />
     </form>

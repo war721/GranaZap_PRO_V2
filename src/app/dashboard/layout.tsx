@@ -2,7 +2,9 @@
 
 import { AccountFilterProvider } from "@/contexts/account-filter-context";
 import { SidebarProvider } from "@/contexts/sidebar-context";
-import { SubscriptionLockModal } from "@/components/dashboard/subscription-lock-modal";
+import { SubscriptionBlockModal } from "@/components/dashboard/subscription-block-modal";
+import { SubscriptionWarningBanner } from "@/components/dashboard/subscription-warning-banner";
+import { useSubscriptionStatus } from "@/hooks/use-subscription-status";
 import dynamic from 'next/dynamic';
 
 // Sidebar com SSR desabilitado para evitar flash de branding
@@ -41,6 +43,37 @@ const BottomNavDynamic = dynamic(
   }
 );
 
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
+  const { blockingLevel } = useSubscriptionStatus();
+
+  return (
+    <div className="flex h-screen bg-[#0A0F1C] text-white overflow-hidden">
+      {/* Modal de bloqueio suave (1-13 dias expirado) */}
+      {blockingLevel === 'soft-block' && <SubscriptionBlockModal />}
+
+      {/* Sidebar */}
+      <DashboardSidebarDynamic />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Header */}
+        <DashboardHeaderDynamic />
+
+        {/* Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+          {/* Banner de aviso (3 dias antes de expirar) */}
+          {blockingLevel === 'warning' && <SubscriptionWarningBanner />}
+          
+          {children}
+        </main>
+      </div>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <BottomNavDynamic />
+    </div>
+  );
+}
+
 export default function DashboardLayout({
   children,
 }: {
@@ -49,26 +82,9 @@ export default function DashboardLayout({
   return (
     <AccountFilterProvider>
       <SidebarProvider>
-        <div className="flex h-screen bg-[#0A0F1C] text-white overflow-hidden">
-          <SubscriptionLockModal />
-
-          {/* Sidebar */}
-          <DashboardSidebarDynamic />
-
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header */}
-            <DashboardHeaderDynamic />
-
-            {/* Content */}
-            <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
-              {children}
-            </main>
-          </div>
-
-          {/* Bottom Navigation - Mobile Only */}
-          <BottomNavDynamic />
-        </div>
+        <DashboardLayoutContent>
+          {children}
+        </DashboardLayoutContent>
       </SidebarProvider>
     </AccountFilterProvider>
   );
