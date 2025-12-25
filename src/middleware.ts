@@ -70,65 +70,64 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // --- Lógica de Bloqueio por Plano Expirado ---
-  // (Não precisa mais verificar isPlansRoute pois /planos é pública)
-  // 1. Buscar perfil do usuário
-  const { data: profile } = await supabase
+  // Permitir acesso à página /blocked sem verificação
+  if (request.nextUrl.pathname === '/blocked') {
+    return response
+  }
+
+  // SEGURANÇA: Verificar se é admin ANTES de qualquer bloqueio
+  const { data: adminCheck } = await supabase
     .from('usuarios')
-    .select('plano, data_final_plano, status, is_admin')
+    .select('is_admin')
     .eq('auth_user', user.id)
     .single()
 
-  if (profile) {
-    // Admin nunca é bloqueado
-    if (!profile.is_admin) {
-      let isAccessAllowed = false;
+  // Admin nunca é bloqueado - retornar imediatamente
+  if (adminCheck?.is_admin) {
+    response.cookies.delete('subscription_status')
+    response.cookies.delete('days_expired')
+    return response
+  }
 
-      // 1. Verificar expiração do próprio usuário
-      if (profile.data_final_plano) {
-        const expirationDate = new Date(profile.data_final_plano);
+  // --- Lógica de Bloqueio por Plano Expirado (SEGURANÇA) ---
+  // IMPORTANTE: Usar RPC do backend para validação segura
+  const { data: accessInfo, error: accessError } = await supabase.rpc('verificar_meu_acesso')
+
+  if (!accessError && accessInfo) {
+    // Admin nunca é bloqueado (double-check)
+    if (!accessInfo.isAdmin) {
+      // Calcular dias expirado
+      let daysExpired = 0;
+      if (accessInfo.dataFinalPlano) {
+        const expirationDate = new Date(accessInfo.dataFinalPlano);
         const now = new Date();
-        if (expirationDate > now) {
-          isAccessAllowed = true;
+        const diffTime = now.getTime() - expirationDate.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays > 0) {
+          daysExpired = diffDays;
         }
       }
 
-      // 2. Se não permitido pelo plano pessoal, verificar se é Dependente com Pai ativo
-      if (!isAccessAllowed) {
-        const { data: dependency } = await supabase
-          .from('usuarios_dependentes')
-          .select('usuario_principal_id, status, convite_status')
-          .eq('auth_user_id', user.id)
-          .eq('status', 'ativo')
-          .eq('convite_status', 'aceito')
-          .single();
-
-        if (dependency) {
-          // Verificar plano do Pai
-          const { data: parentProfile } = await supabase
-            .from('usuarios')
-            .select('data_final_plano, status')
-            .eq('id', dependency.usuario_principal_id)
-            .single();
-          
-          if (parentProfile && parentProfile.status === 'ativo' && parentProfile.data_final_plano) {
-            const parentExpiration = new Date(parentProfile.data_final_plano);
-            const now = new Date();
-            if (parentExpiration > now) {
-              isAccessAllowed = true;
-            }
-          }
-        }
+      // BLOQUEIO TOTAL: 14+ dias expirado OU backend retornou isBlocked
+      if (daysExpired >= 14 || accessInfo.isBlocked) {
+        // Redirecionar para página de bloqueio
+        return NextResponse.redirect(new URL('/blocked', request.url))
       }
-
-      // Se após todas as verificações ainda não tiver acesso ->
-      // Marca cookie para o frontend saber que deve bloquear
-      if (!isAccessAllowed) {
-         response.cookies.set('subscription_status', 'expired')
+      
+      // BLOQUEIO SUAVE: 1-13 dias expirado
+      if (daysExpired >= 1 && daysExpired < 14) {
+        response.cookies.set('subscription_status', 'soft-blocked')
+        response.cookies.set('days_expired', daysExpired.toString())
       } else {
-         // Garante que não tenha o cookie se estiver permitido
-         response.cookies.delete('subscription_status')
+        // Limpar cookies se estiver ativo
+        response.cookies.delete('subscription_status')
+        response.cookies.delete('days_expired')
       }
+    } else {
+      // Admin: limpar cookies
+      response.cookies.delete('subscription_status')
+      response.cookies.delete('days_expired')
     }
   }
 

@@ -6,8 +6,9 @@
 -- 
 -- ⚠️ IMPORTANTE: Execute este arquivo APÓS o setup.sql
 -- 
--- Data de Geração: 21/12/2024
+-- Data de Geração: 22/12/2024 (Atualizado)
 -- Projeto: vrmickfxoxvyljounoxq
+-- Última Atualização: 22/12/2024 - Adicionado user_id e auto_set_plano_id
 -- =====================================================
 
 -- =====================================================
@@ -69,6 +70,8 @@ ADD COLUMN IF NOT EXISTS cartao_id UUID REFERENCES cartoes_credito(id) ON DELETE
 ALTER TABLE transacoes 
 ADD COLUMN IF NOT EXISTS conta_destino_id UUID REFERENCES contas_bancarias(id) ON DELETE SET NULL;
 
+COMMENT ON COLUMN transacoes.conta_destino_id IS 'Conta bancária de destino (usado em transferências entre contas)';
+
 -- Adicionar constraint de valor positivo
 DO $$
 BEGIN
@@ -103,11 +106,19 @@ ADD COLUMN IF NOT EXISTS cartao_id UUID REFERENCES cartoes_credito(id) ON DELETE
 ALTER TABLE lancamentos_futuros 
 ADD COLUMN IF NOT EXISTS parcela_info JSONB DEFAULT NULL;
 
+ALTER TABLE lancamentos_futuros 
+ADD COLUMN IF NOT EXISTS tipo_conta TEXT DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
+
+ALTER TABLE lancamentos_futuros 
+ADD COLUMN IF NOT EXISTS conta_id UUID REFERENCES contas_bancarias(id) ON DELETE SET NULL;
+
 COMMENT ON COLUMN lancamentos_futuros.dependente_id IS 'ID do dependente que criou o lançamento futuro. NULL = lançamento do usuário principal';
 COMMENT ON COLUMN lancamentos_futuros.data_final IS 'Data final opcional para lançamentos recorrentes. NULL = recorrente indefinido (comportamento atual mantido)';
 COMMENT ON COLUMN lancamentos_futuros.confirmed_dates IS 'JSON array com datas já confirmadas de recorrentes expandidos. NULL = comportamento atual mantido';
 COMMENT ON COLUMN lancamentos_futuros.cartao_id IS 'Cartão de crédito vinculado ao lançamento (para parcelas)';
 COMMENT ON COLUMN lancamentos_futuros.parcela_info IS 'Informações da parcela: {"numero": 1, "total": 12, "valor_original": 1200.00}';
+COMMENT ON COLUMN lancamentos_futuros.tipo_conta IS 'Tipo de conta: pessoal ou pj (Pessoa Jurídica)';
+COMMENT ON COLUMN lancamentos_futuros.conta_id IS 'Conta bancária vinculada ao lançamento futuro';
 
 -- 2.5 Tabela: planos_sistema
 -- Colunas para Planos Compartilhados e Modo PJ
@@ -128,7 +139,46 @@ COMMENT ON COLUMN planos_sistema.max_usuarios_dependentes IS 'Número máximo de
 COMMENT ON COLUMN planos_sistema.destaque IS 'Se este plano deve ser destacado na interface (ex: "Mais Popular")';
 COMMENT ON COLUMN planos_sistema.permite_modo_pj IS 'Se este plano permite usar o modo PJ (Pessoa Jurídica)';
 
--- 2.6 Tabela: investment_positions
+-- 2.6 Tabela: configuracoes_sistema
+-- Colunas Admin e Configurações Adicionais
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS support_email CHARACTER VARYING DEFAULT 'suporte@granazap.com';
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS bloquear_cadastro_novos_usuarios BOOLEAN DEFAULT false;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS habilitar_modo_pj BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_sidebar_logo BOOLEAN DEFAULT false;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_sidebar_name BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_login_logo BOOLEAN DEFAULT false;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_login_name BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS logo_url_sidebar TEXT DEFAULT NULL;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS video_url_instalacao TEXT DEFAULT NULL;
+
+COMMENT ON COLUMN configuracoes_sistema.support_email IS 'Email de suporte exibido na plataforma';
+COMMENT ON COLUMN configuracoes_sistema.bloquear_cadastro_novos_usuarios IS 'Se true, bloqueia cadastro de novos usuários na plataforma';
+COMMENT ON COLUMN configuracoes_sistema.habilitar_modo_pj IS 'Se true, habilita o modo PJ (Pessoa Jurídica) na plataforma';
+COMMENT ON COLUMN configuracoes_sistema.show_sidebar_logo IS 'Se true, exibe logo na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.show_sidebar_name IS 'Se true, exibe nome da empresa na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.show_login_logo IS 'Se true, exibe logo na tela de login';
+COMMENT ON COLUMN configuracoes_sistema.show_login_name IS 'Se true, exibe nome da empresa na tela de login';
+COMMENT ON COLUMN configuracoes_sistema.logo_url_sidebar IS 'URL do logo para exibir na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.video_url_instalacao IS 'URL do vídeo de instalação/tutorial';
+
+-- 2.7 Tabela: investment_positions
 -- Colunas para Renda Fixa e Impostos Manuais
 ALTER TABLE investment_positions 
 ADD COLUMN IF NOT EXISTS yield_percentage NUMERIC(5,2) DEFAULT NULL;
@@ -155,22 +205,20 @@ COMMENT ON COLUMN investment_positions.use_manual_tax IS 'Se true, usa valores m
 CREATE TABLE IF NOT EXISTS contas_bancarias (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     nome TEXT NOT NULL,
     banco TEXT,
-    tipo TEXT NOT NULL CHECK (tipo IN ('corrente', 'poupanca', 'investimento', 'carteira')),
-    saldo_inicial NUMERIC(15,2) NOT NULL DEFAULT 0,
     saldo_atual NUMERIC(15,2) NOT NULL DEFAULT 0,
-    cor TEXT DEFAULT '#8A05BE',
-    icone TEXT DEFAULT 'wallet',
-    ativa BOOLEAN DEFAULT true,
+    is_default BOOLEAN DEFAULT false,
+    is_archived BOOLEAN DEFAULT false,
     tipo_conta TEXT NOT NULL DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 COMMENT ON TABLE contas_bancarias IS 'Contas bancárias e carteiras do usuário para controle de saldo';
-COMMENT ON COLUMN contas_bancarias.tipo IS 'Tipo da conta: corrente, poupanca, investimento, carteira';
-COMMENT ON COLUMN contas_bancarias.saldo_inicial IS 'Saldo inicial ao criar a conta';
+COMMENT ON COLUMN contas_bancarias.usuario_id IS 'UUID do auth.users (para RLS)';
+COMMENT ON COLUMN contas_bancarias.user_id IS 'ID do usuário na tabela usuarios (INTEGER). Preenchido automaticamente via trigger baseado em usuario_id (UUID).';
 COMMENT ON COLUMN contas_bancarias.saldo_atual IS 'Saldo atual calculado automaticamente';
 COMMENT ON COLUMN contas_bancarias.tipo_conta IS 'Tipo de conta: pessoal ou pj (Pessoa Jurídica)';
 
@@ -178,6 +226,7 @@ COMMENT ON COLUMN contas_bancarias.tipo_conta IS 'Tipo de conta: pessoal ou pj (
 CREATE TABLE IF NOT EXISTS cartoes_credito (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     nome TEXT NOT NULL,
     bandeira TEXT,
     ultimos_digitos TEXT,
@@ -193,6 +242,8 @@ CREATE TABLE IF NOT EXISTS cartoes_credito (
 );
 
 COMMENT ON TABLE cartoes_credito IS 'Cartões de crédito do usuário';
+COMMENT ON COLUMN cartoes_credito.usuario_id IS 'UUID do auth.users (para RLS)';
+COMMENT ON COLUMN cartoes_credito.user_id IS 'ID do usuário na tabela usuarios (INTEGER). Preenchido automaticamente via trigger baseado em usuario_id (UUID).';
 COMMENT ON COLUMN cartoes_credito.dia_fechamento IS 'Dia do mês em que a fatura fecha';
 COMMENT ON COLUMN cartoes_credito.dia_vencimento IS 'Dia do mês em que a fatura vence';
 COMMENT ON COLUMN cartoes_credito.conta_vinculada_id IS 'Conta bancária usada para pagar a fatura';
@@ -221,6 +272,7 @@ COMMENT ON COLUMN investment_assets.source IS 'Fonte dos dados: brapi, binance, 
 CREATE TABLE IF NOT EXISTS investment_positions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
     asset_id UUID NOT NULL REFERENCES investment_assets(id) ON DELETE RESTRICT,
     conta_id UUID REFERENCES contas_bancarias(id) ON DELETE SET NULL,
     quantidade NUMERIC(15,4) NOT NULL CHECK (quantidade > 0),
@@ -235,11 +287,12 @@ CREATE TABLE IF NOT EXISTS investment_positions (
     yield_percentage NUMERIC(5,2) DEFAULT NULL,
     manual_ir NUMERIC(15,2),
     manual_iof NUMERIC(15,2),
-    use_manual_tax BOOLEAN DEFAULT false,
-    UNIQUE(usuario_id, asset_id)
+    use_manual_tax BOOLEAN DEFAULT false
 );
 
 COMMENT ON TABLE investment_positions IS 'Posições de investimento do usuário';
+COMMENT ON COLUMN investment_positions.usuario_id IS 'UUID do auth.users (para RLS)';
+COMMENT ON COLUMN investment_positions.user_id IS 'ID do usuário na tabela usuarios (INTEGER). Preenchido automaticamente via trigger baseado em usuario_id (UUID).';
 COMMENT ON COLUMN investment_positions.quantidade IS 'Quantidade de ativos na posição';
 COMMENT ON COLUMN investment_positions.preco_medio IS 'Preço médio de compra';
 COMMENT ON COLUMN investment_positions.is_manual_price IS 'Se true, usa manual_price ao invés do preço da API';
@@ -544,7 +597,101 @@ BEGIN
 END;
 $$;
 
--- 4.8 Funções Admin (novas)
+-- 4.7.1 Função: verificar_proprietario_por_auth (CRÍTICA para RLS)
+CREATE OR REPLACE FUNCTION verificar_proprietario_por_auth()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+    user_id INTEGER;
+    principal_id INTEGER;
+BEGIN
+    -- 1. Tentar buscar como usuário principal
+    SELECT id INTO user_id
+    FROM public.usuarios
+    WHERE auth_user = auth.uid();
+    
+    -- Se encontrou, retornar
+    IF user_id IS NOT NULL THEN
+        RETURN user_id;
+    END IF;
+    
+    -- 2. Se não encontrou, verificar se é dependente
+    SELECT usuario_principal_id INTO principal_id
+    FROM public.usuarios_dependentes
+    WHERE auth_user_id = auth.uid() 
+      AND status = 'ativo';
+    
+    -- Retornar ID do principal (para acessar dados compartilhados)
+    RETURN COALESCE(principal_id, 0);
+END;
+$$;
+
+COMMENT ON FUNCTION verificar_proprietario_por_auth() IS 'Retorna o ID do usuário principal. Se for dependente, retorna o ID do titular. Usado nas políticas RLS para permitir acesso compartilhado.';
+
+-- 4.8 Função: sync_user_id_from_auth (NOVA - 22/12/2024)
+CREATE OR REPLACE FUNCTION sync_user_id_from_auth()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Se user_id já está preenchido, não faz nada
+  IF NEW.user_id IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Busca o user_id (INTEGER) baseado no usuario_id (UUID)
+  SELECT id INTO NEW.user_id
+  FROM usuarios
+  WHERE auth_user = NEW.usuario_id;
+  
+  -- Se não encontrou, lança erro
+  IF NEW.user_id IS NULL THEN
+    RAISE EXCEPTION 'Usuário não encontrado na tabela usuarios para auth_user: %', NEW.usuario_id;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION sync_user_id_from_auth() IS 'Preenche automaticamente user_id (INTEGER) baseado em usuario_id (UUID) nas tabelas de contas, cartões e investimentos';
+
+-- 4.9 Função: auto_set_plano_id (NOVA - 22/12/2024)
+CREATE OR REPLACE FUNCTION auto_set_plano_id()
+RETURNS TRIGGER AS $$
+BEGIN
+  -- Se plano_id já está preenchido, não faz nada
+  IF NEW.plano_id IS NOT NULL THEN
+    RETURN NEW;
+  END IF;
+
+  -- Se plano é 'Free' ou NULL, seta plano_id = 1 (Plano Free)
+  IF NEW.plano = 'Free' OR NEW.plano IS NULL THEN
+    NEW.plano_id := 1;
+    NEW.plano := 'Free'; -- Garante que o campo texto também está correto
+    RETURN NEW;
+  END IF;
+
+  -- Para outros planos, tenta encontrar o ID baseado no nome
+  -- Mensal = 2, Trimestral = 3, Semestral = 4, Anual = 5
+  CASE LOWER(NEW.plano)
+    WHEN 'mensal' THEN NEW.plano_id := 2;
+    WHEN 'trimestral' THEN NEW.plano_id := 3;
+    WHEN 'semestral' THEN NEW.plano_id := 4;
+    WHEN 'anual' THEN NEW.plano_id := 5;
+    ELSE 
+      -- Se não reconhecer, seta como Free por segurança
+      NEW.plano_id := 1;
+      NEW.plano := 'Free';
+  END CASE;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+COMMENT ON FUNCTION auto_set_plano_id() IS 'Preenche automaticamente plano_id baseado no campo plano. Se plano=Free ou NULL, seta plano_id=1. Garante que nenhum usuário fique sem plano vinculado.';
+
+-- 4.10 Funções Admin (novas)
 CREATE OR REPLACE FUNCTION admin_create_user(
     p_nome TEXT,
     p_email TEXT,
@@ -794,6 +941,32 @@ CREATE TRIGGER on_update_investment_positions
     FOR EACH ROW
     EXECUTE FUNCTION handle_updated_at();
 
+-- 5.6 Triggers: sync user_id automaticamente (NOVOS - 22/12/2024)
+DROP TRIGGER IF EXISTS sync_user_id_contas ON contas_bancarias;
+CREATE TRIGGER sync_user_id_contas
+  BEFORE INSERT OR UPDATE ON contas_bancarias
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_user_id_from_auth();
+
+DROP TRIGGER IF EXISTS sync_user_id_cartoes ON cartoes_credito;
+CREATE TRIGGER sync_user_id_cartoes
+  BEFORE INSERT OR UPDATE ON cartoes_credito
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_user_id_from_auth();
+
+DROP TRIGGER IF EXISTS sync_user_id_investments ON investment_positions;
+CREATE TRIGGER sync_user_id_investments
+  BEFORE INSERT OR UPDATE ON investment_positions
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_user_id_from_auth();
+
+-- 5.7 Trigger: auto-set plano_id em usuários (NOVO - 22/12/2024)
+DROP TRIGGER IF EXISTS set_plano_id_on_user ON usuarios;
+CREATE TRIGGER set_plano_id_on_user
+  BEFORE INSERT OR UPDATE ON usuarios
+  FOR EACH ROW
+  EXECUTE FUNCTION auto_set_plano_id();
+
 -- =====================================================
 -- 6. VIEWS (não existem no setup.sql)
 -- =====================================================
@@ -895,11 +1068,13 @@ GROUP BY p.usuario_id, p.tipo_conta, EXTRACT(YEAR FROM d.data_pagamento), EXTRAC
 
 -- Índices para contas_bancarias
 CREATE INDEX IF NOT EXISTS idx_contas_bancarias_usuario_id ON contas_bancarias(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_contas_user_id ON contas_bancarias(user_id);
 CREATE INDEX IF NOT EXISTS idx_contas_bancarias_usuario_saldo ON contas_bancarias(usuario_id, saldo_atual);
 CREATE INDEX IF NOT EXISTS idx_contas_tipo_conta ON contas_bancarias(tipo_conta);
 
 -- Índices para cartoes_credito
 CREATE INDEX IF NOT EXISTS idx_cartoes_usuario ON cartoes_credito(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_cartoes_user_id ON cartoes_credito(user_id);
 CREATE INDEX IF NOT EXISTS idx_cartoes_tipo_conta ON cartoes_credito(tipo_conta);
 CREATE INDEX IF NOT EXISTS idx_cartoes_ativo ON cartoes_credito(ativo);
 CREATE INDEX IF NOT EXISTS idx_cartoes_conta_vinculada ON cartoes_credito(conta_vinculada_id);
@@ -917,6 +1092,8 @@ CREATE INDEX IF NOT EXISTS idx_transacoes_usuario_data ON transacoes(usuario_id,
 -- Índices para lancamentos_futuros
 CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_cartao ON lancamentos_futuros(cartao_id);
 CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_dependente ON lancamentos_futuros(dependente_id);
+CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_conta ON lancamentos_futuros(conta_id);
+CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_tipo_conta ON lancamentos_futuros(tipo_conta);
 CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_data_final ON lancamentos_futuros(data_final) WHERE data_final IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_recorrente_periodo ON lancamentos_futuros(recorrente, data_prevista, status) WHERE recorrente = true AND status = 'pendente';
 CREATE INDEX IF NOT EXISTS idx_lancamentos_futuros_expansion_query ON lancamentos_futuros(usuario_id, recorrente, status, data_prevista, data_final) WHERE recorrente = true AND status = 'pendente' AND data_final IS NOT NULL;
@@ -936,6 +1113,7 @@ CREATE INDEX IF NOT EXISTS idx_investment_assets_source ON investment_assets(sou
 
 -- Índices para investment_positions
 CREATE INDEX IF NOT EXISTS idx_investment_positions_usuario ON investment_positions(usuario_id);
+CREATE INDEX IF NOT EXISTS idx_investments_user_id ON investment_positions(user_id);
 CREATE INDEX IF NOT EXISTS idx_investment_positions_asset ON investment_positions(asset_id);
 CREATE INDEX IF NOT EXISTS idx_investment_positions_conta ON investment_positions(conta_id);
 CREATE INDEX IF NOT EXISTS idx_investment_positions_tipo_conta ON investment_positions(tipo_conta);
@@ -1194,30 +1372,58 @@ Edge Functions criadas no Supabase:
 */
 
 -- =====================================================
+-- 11. CONFIGURAÇÕES DE BLOQUEIO DE ASSINATURA
+-- =====================================================
+
+-- Adicionar colunas de configuração de bloqueio (se não existirem)
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS dias_aviso_expiracao INTEGER DEFAULT 3;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS dias_soft_block INTEGER DEFAULT 7;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS dias_hard_block INTEGER DEFAULT 14;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS permitir_visualizacao_bloqueado BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS whatsapp_suporte_url TEXT;
+
+COMMENT ON COLUMN configuracoes_sistema.dias_aviso_expiracao IS 'Dias antes da expiração para mostrar aviso (banner amarelo)';
+COMMENT ON COLUMN configuracoes_sistema.dias_soft_block IS 'Dias após expiração para bloqueio suave (modal, permite visualizar)';
+COMMENT ON COLUMN configuracoes_sistema.dias_hard_block IS 'Dias após expiração para bloqueio total (redirect para /blocked)';
+COMMENT ON COLUMN configuracoes_sistema.permitir_visualizacao_bloqueado IS 'Se true, usuário bloqueado pode visualizar dados (read-only)';
+COMMENT ON COLUMN configuracoes_sistema.whatsapp_suporte_url IS 'URL do WhatsApp para suporte (diferente do WhatsApp de automação)';
+
+-- =====================================================
 -- ✅ SETUP DIFFERENTIAL COMPLETO FINALIZADO!
 -- =====================================================
 -- 
 -- 📊 RESUMO DAS MUDANÇAS:
--- ✅ 21 novas colunas em tabelas existentes
+-- ✅ 36 novas colunas em tabelas existentes (lancamentos_futuros: tipo_conta, conta_id | configuracoes_sistema: 13 novas colunas)
 -- ✅ 8 novas tabelas completas
--- ✅ 15+ novas funções SQL
--- ✅ 10 novos triggers
+-- ✅ 18 novas funções SQL (incluindo sync_user_id, auto_set_plano_id e verificar_proprietario_por_auth)
+-- ✅ 14 novos triggers (incluindo sync user_id e auto plano_id)
 -- ✅ 3 novas views
--- ✅ 50+ novos índices
+-- ✅ 55 novos índices (incluindo user_id indexes e lancamentos_futuros indexes)
 -- ✅ 30+ novas políticas RLS
 -- ✅ 2 Cron Jobs configurados
 -- ✅ 2 Edge Functions
 -- 
 -- 🎯 MÓDULOS ADICIONADOS:
 -- ✅ Internacionalização (idioma + moeda)
--- ✅ Contas Bancárias
--- ✅ Cartões de Crédito
--- ✅ Investimentos (Ações, FIIs, Cripto, Renda Fixa)
+-- ✅ Contas Bancárias (com user_id INTEGER)
+-- ✅ Cartões de Crédito (com user_id INTEGER)
+-- ✅ Investimentos (Ações, FIIs, Cripto, Renda Fixa) (com user_id INTEGER)
 -- ✅ Modo PJ (Pessoa Jurídica)
 -- ✅ Sistema de Dependentes
 -- ✅ Transferências entre Contas
 -- ✅ Keywords AI para Categorias
 -- ✅ Atualização Automática de Preços
+-- ✅ Auto-vinculação de plano_id em cadastro de usuários
+-- ✅ Sistema de Bloqueio de Assinatura (3 níveis: aviso, soft-block, hard-block)
 -- 
 -- 🔐 SEGURANÇA:
 -- ✅ RLS habilitado em todas as novas tabelas
