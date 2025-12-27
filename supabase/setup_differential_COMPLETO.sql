@@ -1063,6 +1063,20 @@ JOIN investment_positions p ON d.position_id = p.id
 GROUP BY p.usuario_id, p.tipo_conta, EXTRACT(YEAR FROM d.data_pagamento), EXTRACT(MONTH FROM d.data_pagamento);
 
 -- =====================================================
+-- 6.4 Segurança das Views (Security Invoker)
+-- =====================================================
+-- Configurar views para usar security_invoker = true
+-- Isso faz com que as views herdem as permissões RLS das tabelas base
+ALTER VIEW v_positions_detailed SET (security_invoker = true);
+ALTER VIEW v_portfolio_summary SET (security_invoker = true);
+ALTER VIEW v_dividends_summary SET (security_invoker = true);
+
+-- Comentários explicativos
+COMMENT ON VIEW v_positions_detailed IS 'View com detalhes das posições de investimento. Security invoker habilitado para herdar RLS das tabelas base (investment_positions, investment_assets).';
+COMMENT ON VIEW v_portfolio_summary IS 'View com resumo do portfólio por usuário e tipo de conta. Security invoker habilitado para herdar RLS da view v_positions_detailed.';
+COMMENT ON VIEW v_dividends_summary IS 'View com resumo de dividendos por usuário, tipo de conta e período. Security invoker habilitado para herdar RLS das tabelas base (investment_dividends, investment_positions).';
+
+-- =====================================================
 -- 7. ÍNDICES ADICIONAIS (não existem no setup.sql)
 -- =====================================================
 
