@@ -27,7 +27,7 @@ export function UserEditModal({
     nome: user.nome,
     email: user.email,
     celular: user.celular || '',
-    plano: user.plano || 'free',
+    plano_id: user.plano_id || 1, // Default to Free plan (id: 1)
     status: user.status,
     is_admin: user.is_admin,
     data_compra: user.data_compra || '',
@@ -48,7 +48,7 @@ export function UserEditModal({
         nome: user.nome,
         email: user.email,
         celular: user.celular || '',
-        plano: user.plano || 'free',
+        plano_id: user.plano_id || 1, // Default to Free plan (id: 1)
         status: user.status,
         is_admin: user.is_admin,
         data_compra: user.data_compra || '',
@@ -94,13 +94,7 @@ export function UserEditModal({
     e.preventDefault();
     setSaving(true);
     try {
-      // Converter plano para plano_id
-      const planoId = plans.find(p => p.tipo_periodo === formData.plano)?.id;
-      
-      await onSave({
-        ...formData,
-        plano_id: planoId,
-      });
+      await onSave(formData);
     } finally {
       setSaving(false);
     }
@@ -157,8 +151,8 @@ export function UserEditModal({
             Plano *
           </label>
           <select
-            value={formData.plano}
-            onChange={(e) => setFormData({ ...formData, plano: e.target.value })}
+            value={formData.plano_id}
+            onChange={(e) => setFormData({ ...formData, plano_id: Number(e.target.value) })}
             disabled={loadingPlans}
             className="w-full bg-[#0A0F1C] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-[#22C55E] disabled:opacity-50"
           >
@@ -166,7 +160,7 @@ export function UserEditModal({
               <option>Carregando planos...</option>
             ) : (
               plans.map((plan) => (
-                <option key={plan.id} value={plan.tipo_periodo}>
+                <option key={plan.id} value={plan.id}>
                   {plan.nome} - R$ {Number(plan.valor).toFixed(2)}
                 </option>
               ))
