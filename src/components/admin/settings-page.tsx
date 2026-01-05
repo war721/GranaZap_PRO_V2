@@ -7,6 +7,7 @@ import { SuccessModal } from "./success-modal";
 import { WhatsAppSettings } from "./whatsapp-settings";
 import { AdminSettings } from "./admin-settings";
 import { LogoSettings } from "./logo-settings";
+import { WebhookSettings } from "./webhook-settings";
 
 interface WhiteLabelSettings {
   app_name: string;
@@ -150,6 +151,11 @@ export function SettingsPage() {
       {/* WhatsApp Settings */}
       <div className="mb-8">
         <WhatsAppSettings />
+      </div>
+
+      {/* Webhook Settings */}
+      <div className="mb-8">
+        <WebhookSettings />
       </div>
 
       {/* Logo Settings */}

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useUser } from "@/hooks/use-user";
 import { useLanguage } from "@/contexts/language-context";
-import { Users, UserPlus, Trash2, Mail, Clock, Settings, Edit, Power, PowerOff } from "lucide-react";
+import { Users, UserPlus, Trash2, Mail, Clock, Settings, Edit, Power, PowerOff, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AddUserModal } from "./add-user-modal";
 import { EditMemberModal } from "./edit-member-modal";
@@ -11,6 +11,7 @@ import { EditMemberInfoModal } from "./edit-member-info-modal";
 import { ConfirmDeactivateModal } from "@/components/ui/confirm-deactivate-modal";
 import { useTeamMembers } from "@/hooks/use-team-members";
 import { removeMember, updateMemberPermissions, updateMemberInfo, toggleMemberStatus } from "@/actions/team-actions";
+import { sendWebhookInvite } from "@/actions/webhook-actions";
 import type { TeamMember } from "@/hooks/use-team-members";
 import { Toast, useToast } from "@/components/ui/toast";
 import { InfoCard } from "@/components/ui/info-card";
@@ -26,6 +27,7 @@ export function SharedManagement() {
   const { data: members, refetch } = useTeamMembers();
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [togglingId, setTogglingId] = useState<number | null>(null);
+  const [resendingId, setResendingId] = useState<number | null>(null);
   const { toasts, success, error, removeToast } = useToast();
   
   // Bloquear acesso para dependentes
@@ -108,6 +110,29 @@ export function SharedManagement() {
       error('Erro ao alterar status');
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleResendInvite = async (member: TeamMember) => {
+    setResendingId(member.id);
+    try {
+      const result = await sendWebhookInvite({
+        memberId: member.id,
+        memberName: member.nome,
+        memberEmail: member.email || '',
+        memberPhone: member.telefone || '',
+      });
+
+      if (result.success) {
+        success('Convite reenviado via WhatsApp com sucesso!');
+        refetch();
+      } else {
+        error('Erro ao reenviar convite: ' + result.error);
+      }
+    } catch (err) {
+      error('Erro ao reenviar convite');
+    } finally {
+      setResendingId(null);
     }
   };
 
@@ -251,10 +276,24 @@ export function SharedManagement() {
                   </span>
                 )}
                 
+                {/* Reenviar Convite WhatsApp */}
+                <button 
+                  onClick={() => handleResendInvite(member)}
+                  disabled={resendingId === member.id}
+                  className="p-2 text-zinc-500 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors disabled:opacity-50"
+                  title="Reenviar convite via WhatsApp"
+                >
+                  {resendingId === member.id ? (
+                    <div className="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </button>
+                
                 {/* Editar Cadastro */}
                 <button 
                   onClick={() => setEditingMemberInfo(member)}
-                  className="p-2 text-zinc-500 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                  className="p-2 text-zinc-500 hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
                   title="Editar cadastro"
                 >
                   <Edit className="w-4 h-4" />
