@@ -476,9 +476,9 @@ export function ReportsPage() {
                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                   contentStyle={{ backgroundColor: '#1F2937', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number, name: string) => {
+                  formatter={(value: number | undefined, name: string | undefined) => {
                     const translatedName = name === 'Receitas' ? t('reports.income') : t('reports.expenses');
-                    return [formatCurrency(value), translatedName];
+                    return [formatCurrency(value || 0), translatedName];
                   }}
                 />
                 <Legend 
@@ -525,7 +525,7 @@ export function ReportsPage() {
                   cursor={{ stroke: 'rgba(255,255,255,0.1)' }}
                   contentStyle={{ backgroundColor: '#1F2937', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
                 />
                 <Area 
                   type="monotone" 
@@ -719,7 +719,7 @@ export function ReportsPage() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1F2937', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -776,7 +776,7 @@ export function ReportsPage() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#1F2937', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => formatCurrency(value)}
+                  formatter={(value: number | undefined) => formatCurrency(value || 0)}
                 />
               </PieChart>
             </ResponsiveContainer>
