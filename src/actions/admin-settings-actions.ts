@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
 export async function updateAdminSettings(data: {
-  bloquear_cadastro_novos_usuarios: boolean;
+  restringir_cadastro_usuarios_existentes: boolean;
 }) {
   const supabase = await createClient();
   
@@ -15,7 +15,7 @@ export async function updateAdminSettings(data: {
   const { data: result, error } = await supabase
     .from("configuracoes_sistema")
     .update({
-      bloquear_cadastro_novos_usuarios: data.bloquear_cadastro_novos_usuarios,
+      restringir_cadastro_usuarios_existentes: data.restringir_cadastro_usuarios_existentes,
       updated_at: new Date().toISOString()
     })
     .eq("id", 1)

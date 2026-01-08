@@ -11,7 +11,7 @@ interface BrandingSettings {
   secondaryColor: string;
   supportEmail: string;
   habilitar_modo_pj?: boolean;
-  bloquear_cadastro_novos_usuarios?: boolean;
+  restringir_cadastro_usuarios_existentes?: boolean;
   show_sidebar_logo?: boolean;
   show_sidebar_name?: boolean;
   show_login_logo?: boolean;
@@ -28,7 +28,7 @@ const defaultSettings: BrandingSettings = {
   secondaryColor: "#0A0F1C",
   supportEmail: "suporte@granazap.com",
   habilitar_modo_pj: true,
-  bloquear_cadastro_novos_usuarios: false,
+  restringir_cadastro_usuarios_existentes: false,
 };
 
 interface BrandingContextType {
@@ -85,7 +85,7 @@ export function BrandingProvider({ children }: { children: React.ReactNode }) {
             secondaryColor: settingsData.secondary_color || defaultSettings.secondaryColor,
             supportEmail: settingsData.support_email || defaultSettings.supportEmail,
             habilitar_modo_pj: settingsData.habilitar_modo_pj !== false, // Default true
-            bloquear_cadastro_novos_usuarios: settingsData.bloquear_cadastro_novos_usuarios === true, // Default false
+            restringir_cadastro_usuarios_existentes: settingsData.restringir_cadastro_usuarios_existentes === true, // Default false
             show_sidebar_logo: settingsData.show_sidebar_logo || false,
             show_sidebar_name: settingsData.show_sidebar_name !== false, // Default true
             show_login_logo: settingsData.show_login_logo || false,

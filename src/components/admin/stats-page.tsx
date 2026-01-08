@@ -26,47 +26,17 @@ export function StatsPage() {
 
   const fetchStats = async () => {
     try {
-      // Buscar estatísticas gerais
-      const { data: usuarios } = await supabase.from('usuarios').select('*');
-      const { data: planos } = await supabase.from('planos_sistema').select('*');
+      // Usar RPC para buscar estatísticas (bypassa RLS com SECURITY DEFINER)
+      const { data: statsRpc, error: statsError } = await supabase.rpc('admin_get_system_stats');
       
-      // Calcular estatísticas
-      const total_usuarios = usuarios?.length || 0;
-      const usuarios_ativos = usuarios?.filter(u => u.status === 'ativo').length || 0;
-      const usuarios_inativos = usuarios?.filter(u => u.status !== 'ativo').length || 0;
-      const usuarios_com_senha = usuarios?.filter(u => u.has_password).length || 0;
+      if (statsError) {
+        console.error('Erro ao buscar estatísticas:', statsError);
+        return;
+      }
       
-      const total_planos = planos?.length || 0;
-      const planos_ativos = planos?.filter(p => p.ativo).length || 0;
-      
-      // Receita estimada (soma dos valores dos planos dos usuários ativos)
-      let receita_mensal_estimada = 0;
-      usuarios?.forEach(u => {
-        if (u.status === 'ativo' && u.plano_id) {
-          const plano = planos?.find(p => p.id === u.plano_id);
-          if (plano) {
-            receita_mensal_estimada += Number(plano.valor);
-          }
-        }
-      });
-      
-      // Usuários por plano
-      const usuarios_por_plano: { plano: string; count: number }[] = [];
-      planos?.forEach(p => {
-        const count = usuarios?.filter(u => u.plano_id === p.id).length || 0;
-        usuarios_por_plano.push({ plano: p.nome, count });
-      });
-
-      setStats({
-        total_usuarios,
-        usuarios_ativos,
-        usuarios_inativos,
-        usuarios_com_senha,
-        total_planos,
-        planos_ativos,
-        receita_mensal_estimada,
-        usuarios_por_plano,
-      });
+      if (statsRpc) {
+        setStats(statsRpc);
+      }
     } catch (error) {
     } finally {
       setLoading(false);

@@ -11,13 +11,13 @@ export function AdminSettings() {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   
-  const [bloquearCadastro, setBloquearCadastro] = useState(false);
+  const [restringirCadastro, setRestringirCadastro] = useState(false);
 
   // Carregar dados quando settings mudar
   useEffect(() => {
     if (settings) {
       // @ts-ignore - Novos campos ainda não estão no tipo
-      setBloquearCadastro(settings.bloquear_cadastro_novos_usuarios || false);
+      setRestringirCadastro(settings.restringir_cadastro_usuarios_existentes || false);
     }
   }, [settings]);
 
@@ -26,7 +26,7 @@ export function AdminSettings() {
     setLoading(true);
     try {
       const result = await updateAdminSettings({
-        bloquear_cadastro_novos_usuarios: bloquearCadastro
+        restringir_cadastro_usuarios_existentes: restringirCadastro
       });
 
 
@@ -65,22 +65,25 @@ export function AdminSettings() {
           <div className="flex items-start gap-3">
             <Lock className="w-5 h-5 text-red-400 mt-0.5" />
             <div>
-              <h3 className="text-white font-medium">Bloquear Cadastro de Novos Usuários</h3>
+              <h3 className="text-white font-medium">Restringir Cadastro a Usuários Existentes</h3>
               <p className="text-sm text-zinc-400 mt-1">
-                Se ativado, novos usuários não poderão se cadastrar pela página de registro.
-                Apenas usuários dependentes poderão ser adicionados por administradores.
+                <strong className="text-zinc-300">Desligado:</strong> Qualquer pessoa pode se cadastrar livremente (modo público).<br/>
+                <strong className="text-zinc-300">Ligado:</strong> Apenas usuários pré-cadastrados (via WhatsApp/N8N) podem fazer login.
+              </p>
+              <p className="text-xs text-zinc-500 mt-2">
+                💡 Use o modo restrito quando quiser controlar quem tem acesso à plataforma.
               </p>
             </div>
           </div>
           <button
-            onClick={() => setBloquearCadastro(!bloquearCadastro)}
+            onClick={() => setRestringirCadastro(!restringirCadastro)}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
-              bloquearCadastro ? 'bg-red-600' : 'bg-zinc-700'
+              restringirCadastro ? 'bg-red-600' : 'bg-green-600'
             }`}
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                bloquearCadastro ? 'translate-x-6' : 'translate-x-1'
+                restringirCadastro ? 'translate-x-6' : 'translate-x-1'
               }`}
             />
           </button>

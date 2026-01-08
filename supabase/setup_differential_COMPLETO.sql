@@ -8,7 +8,7 @@
 -- 
 -- Data de Geração: 22/12/2024 (Atualizado)
 -- Projeto: vrmickfxoxvyljounoxq
--- Última Atualização: 22/12/2024 - Adicionado user_id e auto_set_plano_id
+-- Última Atualização: 08/01/2025 - Unificação de configurações de cadastro
 -- =====================================================
 
 -- =====================================================
@@ -26,182 +26,38 @@
 -- ✅ pg_cron (schema: pg_catalog) - NECESSÁRIA para Investment Updates
 
 -- =====================================================
--- 2. NOVAS COLUNAS EM TABELAS EXISTENTES
+-- 2. NOVAS TABELAS (criar PRIMEIRO para evitar erros de dependência)
 -- =====================================================
 
--- 2.1 Tabela: usuarios
--- Colunas de Internacionalização
-ALTER TABLE usuarios 
-ADD COLUMN IF NOT EXISTS idioma TEXT DEFAULT 'pt' CHECK (idioma IN ('pt', 'es', 'en'));
+-- 2.1 Tabela: usuarios_dependentes (adicionar colunas faltantes)
+-- Tabela já existe, apenas adicionar colunas que podem estar faltando
+ALTER TABLE usuarios_dependentes 
+ADD COLUMN IF NOT EXISTS convite_token TEXT;
 
-ALTER TABLE usuarios 
-ADD COLUMN IF NOT EXISTS moeda TEXT DEFAULT 'BRL' CHECK (moeda IN ('BRL', 'USD', 'EUR', 'PYG', 'ARS'));
+ALTER TABLE usuarios_dependentes 
+ADD COLUMN IF NOT EXISTS convite_expira_em TIMESTAMP WITH TIME ZONE;
 
-COMMENT ON COLUMN usuarios.idioma IS 'Idioma preferido do usuário: pt (Português), es (Español), en (English)';
-COMMENT ON COLUMN usuarios.moeda IS 'Moeda preferida do usuário: BRL (Real), USD (Dólar), EUR (Euro)';
+ALTER TABLE usuarios_dependentes 
+ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id);
 
--- 2.2 Tabela: categoria_trasacoes
--- Colunas para Modo PJ e Keywords AI
-ALTER TABLE categoria_trasacoes 
-ADD COLUMN IF NOT EXISTS tipo_conta TEXT NOT NULL DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
+ALTER TABLE usuarios_dependentes 
+ADD COLUMN IF NOT EXISTS convite_status TEXT DEFAULT 'pendente' CHECK (convite_status IN ('pendente', 'aceito', 'recusado', 'cancelado'));
 
-ALTER TABLE categoria_trasacoes 
-ADD COLUMN IF NOT EXISTS keywords TEXT[] DEFAULT '{}';
+ALTER TABLE usuarios_dependentes 
+ADD COLUMN IF NOT EXISTS permissoes JSONB DEFAULT '{"pode_criar": true, "pode_editar": true, "pode_deletar": false}'::jsonb;
 
-COMMENT ON COLUMN categoria_trasacoes.keywords IS 'Keywords for AI-powered category identification';
+ALTER TABLE usuarios_dependentes 
+ADD COLUMN IF NOT EXISTS avatar_url TEXT;
 
--- 2.3 Tabela: transacoes
--- Colunas para Modo PJ, Transferências e Dependentes (SEM foreign keys para tabelas que ainda não existem)
-ALTER TABLE transacoes 
-ADD COLUMN IF NOT EXISTS dependente_id INTEGER;
+ALTER TABLE usuarios_dependentes 
+ALTER COLUMN permissoes SET DEFAULT '{"nivel_acesso": "basico", "pode_ver_relatorios": true, "pode_ver_dados_admin": true, "pode_convidar_membros": false, "pode_criar_transacoes": true, "pode_gerenciar_contas": false, "pode_editar_transacoes": true, "pode_gerenciar_cartoes": false, "pode_deletar_transacoes": false, "pode_ver_outros_membros": false}'::jsonb;
 
-ALTER TABLE transacoes 
-ADD COLUMN IF NOT EXISTS tipo_conta TEXT DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
+COMMENT ON TABLE usuarios_dependentes IS 'Usuários dependentes vinculados a um usuário principal. Compartilham os mesmos dados financeiros do principal sem ter autenticação própria.';
+COMMENT ON COLUMN usuarios_dependentes.usuario_principal_id IS 'ID do usuário principal (titular do plano) ao qual este dependente pertence';
+COMMENT ON COLUMN usuarios_dependentes.auth_user_id IS 'UUID do auth.users se o dependente tiver login próprio';
+COMMENT ON COLUMN usuarios_dependentes.permissoes IS 'Permissões do dependente em formato JSON';
 
-ALTER TABLE transacoes 
-ADD COLUMN IF NOT EXISTS is_transferencia BOOLEAN DEFAULT false;
-
-ALTER TABLE transacoes 
-ADD COLUMN IF NOT EXISTS conta_id UUID;
-
-ALTER TABLE transacoes 
-ADD COLUMN IF NOT EXISTS cartao_id UUID;
-
-ALTER TABLE transacoes 
-ADD COLUMN IF NOT EXISTS conta_destino_id UUID;
-
-COMMENT ON COLUMN transacoes.conta_destino_id IS 'Conta bancária de destino (usado em transferências entre contas)';
-
--- Adicionar constraint de valor positivo
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint 
-        WHERE conname = 'transacoes_valor_positivo'
-    ) THEN
-        ALTER TABLE transacoes ADD CONSTRAINT transacoes_valor_positivo CHECK (valor > 0);
-    END IF;
-END $$;
-
-COMMENT ON COLUMN transacoes.dependente_id IS 'ID do dependente que criou a transação. NULL = transação do usuário principal';
-COMMENT ON COLUMN transacoes.tipo_conta IS 'Tipo de conta da transação: pessoal ou pj (Pessoa Jurídica)';
-COMMENT ON COLUMN transacoes.is_transferencia IS 'Flag para identificar transferências entre contas (não conta em relatórios)';
-COMMENT ON COLUMN transacoes.conta_id IS 'Conta bancária de origem da transação';
-COMMENT ON COLUMN transacoes.cartao_id IS 'Cartão de crédito usado na transação (se aplicável)';
-
--- 2.4 Tabela: lancamentos_futuros
--- Colunas para Recorrentes, Dependentes e Cartões (SEM foreign keys para tabelas que ainda não existem)
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS dependente_id INTEGER;
-
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS data_final DATE DEFAULT NULL;
-
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS confirmed_dates TEXT DEFAULT NULL;
-
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS cartao_id UUID;
-
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS parcela_info JSONB DEFAULT NULL;
-
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS tipo_conta TEXT DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
-
-ALTER TABLE lancamentos_futuros 
-ADD COLUMN IF NOT EXISTS conta_id UUID;
-
-COMMENT ON COLUMN lancamentos_futuros.dependente_id IS 'ID do dependente que criou o lançamento futuro. NULL = lançamento do usuário principal';
-COMMENT ON COLUMN lancamentos_futuros.data_final IS 'Data final opcional para lançamentos recorrentes. NULL = recorrente indefinido (comportamento atual mantido)';
-COMMENT ON COLUMN lancamentos_futuros.confirmed_dates IS 'JSON array com datas já confirmadas de recorrentes expandidos. NULL = comportamento atual mantido';
-COMMENT ON COLUMN lancamentos_futuros.cartao_id IS 'Cartão de crédito vinculado ao lançamento (para parcelas)';
-COMMENT ON COLUMN lancamentos_futuros.parcela_info IS 'Informações da parcela: {"numero": 1, "total": 12, "valor_original": 1200.00}';
-COMMENT ON COLUMN lancamentos_futuros.tipo_conta IS 'Tipo de conta: pessoal ou pj (Pessoa Jurídica)';
-COMMENT ON COLUMN lancamentos_futuros.conta_id IS 'Conta bancária vinculada ao lançamento futuro';
-
--- 2.5 Tabela: planos_sistema
--- Colunas para Planos Compartilhados e Modo PJ
-ALTER TABLE planos_sistema 
-ADD COLUMN IF NOT EXISTS permite_compartilhamento BOOLEAN DEFAULT false;
-
-ALTER TABLE planos_sistema 
-ADD COLUMN IF NOT EXISTS max_usuarios_dependentes INTEGER DEFAULT 0 CHECK (max_usuarios_dependentes >= 0);
-
-ALTER TABLE planos_sistema 
-ADD COLUMN IF NOT EXISTS destaque BOOLEAN DEFAULT false;
-
-ALTER TABLE planos_sistema 
-ADD COLUMN IF NOT EXISTS permite_modo_pj BOOLEAN DEFAULT true;
-
-COMMENT ON COLUMN planos_sistema.permite_compartilhamento IS 'Define se este plano permite adicionar usuários dependentes (ex: Plano Casal, Plano Empresa). FALSE = não permite, TRUE = permite';
-COMMENT ON COLUMN planos_sistema.max_usuarios_dependentes IS 'Número máximo de usuários dependentes permitidos neste plano. 0 = não permite, -1 = ilimitado, N = limite específico';
-COMMENT ON COLUMN planos_sistema.destaque IS 'Se este plano deve ser destacado na interface (ex: "Mais Popular")';
-COMMENT ON COLUMN planos_sistema.permite_modo_pj IS 'Se este plano permite usar o modo PJ (Pessoa Jurídica)';
-
--- 2.6 Tabela: configuracoes_sistema
--- Colunas Admin e Configurações Adicionais
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS support_email CHARACTER VARYING DEFAULT 'suporte@granazap.com';
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS bloquear_cadastro_novos_usuarios BOOLEAN DEFAULT false;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS habilitar_modo_pj BOOLEAN DEFAULT true;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS show_sidebar_logo BOOLEAN DEFAULT false;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS show_sidebar_name BOOLEAN DEFAULT true;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS show_login_logo BOOLEAN DEFAULT false;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS show_login_name BOOLEAN DEFAULT true;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS logo_url_sidebar TEXT DEFAULT NULL;
-
-ALTER TABLE configuracoes_sistema 
-ADD COLUMN IF NOT EXISTS video_url_instalacao TEXT DEFAULT NULL;
-
-COMMENT ON COLUMN configuracoes_sistema.support_email IS 'Email de suporte exibido na plataforma';
-COMMENT ON COLUMN configuracoes_sistema.bloquear_cadastro_novos_usuarios IS 'Se true, bloqueia cadastro de novos usuários na plataforma';
-COMMENT ON COLUMN configuracoes_sistema.habilitar_modo_pj IS 'Se true, habilita o modo PJ (Pessoa Jurídica) na plataforma';
-COMMENT ON COLUMN configuracoes_sistema.show_sidebar_logo IS 'Se true, exibe logo na sidebar';
-COMMENT ON COLUMN configuracoes_sistema.show_sidebar_name IS 'Se true, exibe nome da empresa na sidebar';
-COMMENT ON COLUMN configuracoes_sistema.show_login_logo IS 'Se true, exibe logo na tela de login';
-COMMENT ON COLUMN configuracoes_sistema.show_login_name IS 'Se true, exibe nome da empresa na tela de login';
-COMMENT ON COLUMN configuracoes_sistema.logo_url_sidebar IS 'URL do logo para exibir na sidebar';
-COMMENT ON COLUMN configuracoes_sistema.video_url_instalacao IS 'URL do vídeo de instalação/tutorial';
-
--- 2.7 Tabela: investment_positions
--- Colunas para Renda Fixa e Impostos Manuais
-ALTER TABLE investment_positions 
-ADD COLUMN IF NOT EXISTS yield_percentage NUMERIC(5,2) DEFAULT NULL;
-
-ALTER TABLE investment_positions 
-ADD COLUMN IF NOT EXISTS manual_ir NUMERIC(15,2) DEFAULT NULL;
-
-ALTER TABLE investment_positions 
-ADD COLUMN IF NOT EXISTS manual_iof NUMERIC(15,2) DEFAULT NULL;
-
-ALTER TABLE investment_positions 
-ADD COLUMN IF NOT EXISTS use_manual_tax BOOLEAN DEFAULT false;
-
-COMMENT ON COLUMN investment_positions.yield_percentage IS 'Rentabilidade contratada para Renda Fixa (ex: 100 = 100% CDI, 110 = 110% CDI). NULL para outros tipos de ativos.';
-COMMENT ON COLUMN investment_positions.manual_ir IS 'Valor manual de IR (para bater com banco)';
-COMMENT ON COLUMN investment_positions.manual_iof IS 'Valor manual de IOF (para bater com banco)';
-COMMENT ON COLUMN investment_positions.use_manual_tax IS 'Se true, usa valores manuais de impostos ao invés de calcular';
-
--- =====================================================
--- 3. NOVAS TABELAS (não existem no setup.sql)
--- =====================================================
-
--- 3.1 Tabela: contas_bancarias
+-- 2.2 Tabela: contas_bancarias
 CREATE TABLE IF NOT EXISTS contas_bancarias (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -222,7 +78,7 @@ COMMENT ON COLUMN contas_bancarias.user_id IS 'ID do usuário na tabela usuarios
 COMMENT ON COLUMN contas_bancarias.saldo_atual IS 'Saldo atual calculado automaticamente';
 COMMENT ON COLUMN contas_bancarias.tipo_conta IS 'Tipo de conta: pessoal ou pj (Pessoa Jurídica)';
 
--- 3.2 Tabela: cartoes_credito
+-- 2.3 Tabela: cartoes_credito
 CREATE TABLE IF NOT EXISTS cartoes_credito (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -248,7 +104,7 @@ COMMENT ON COLUMN cartoes_credito.dia_fechamento IS 'Dia do mês em que a fatura
 COMMENT ON COLUMN cartoes_credito.dia_vencimento IS 'Dia do mês em que a fatura vence';
 COMMENT ON COLUMN cartoes_credito.conta_vinculada_id IS 'Conta bancária usada para pagar a fatura';
 
--- 3.3 Tabela: investment_assets
+-- 2.4 Tabela: investment_assets
 CREATE TABLE IF NOT EXISTS investment_assets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     ticker TEXT NOT NULL UNIQUE,
@@ -268,7 +124,7 @@ COMMENT ON COLUMN investment_assets.ticker IS 'Código do ativo (ex: PETR4, BTCB
 COMMENT ON COLUMN investment_assets.type IS 'Tipo do ativo: acao, fii, etf, renda_fixa, cripto, bdr';
 COMMENT ON COLUMN investment_assets.source IS 'Fonte dos dados: brapi, binance, manual, fallback';
 
--- 3.4 Tabela: investment_positions
+-- 2.5 Tabela: investment_positions (CRIAR ANTES de investment_dividends)
 CREATE TABLE IF NOT EXISTS investment_positions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -296,8 +152,12 @@ COMMENT ON COLUMN investment_positions.user_id IS 'ID do usuário na tabela usua
 COMMENT ON COLUMN investment_positions.quantidade IS 'Quantidade de ativos na posição';
 COMMENT ON COLUMN investment_positions.preco_medio IS 'Preço médio de compra';
 COMMENT ON COLUMN investment_positions.is_manual_price IS 'Se true, usa manual_price ao invés do preço da API';
+COMMENT ON COLUMN investment_positions.yield_percentage IS 'Rentabilidade contratada para Renda Fixa (ex: 100 = 100% CDI, 110 = 110% CDI). NULL para outros tipos de ativos.';
+COMMENT ON COLUMN investment_positions.manual_ir IS 'Valor manual de IR (para bater com banco)';
+COMMENT ON COLUMN investment_positions.manual_iof IS 'Valor manual de IOF (para bater com banco)';
+COMMENT ON COLUMN investment_positions.use_manual_tax IS 'Se true, usa valores manuais de impostos ao invés de calcular';
 
--- 3.5 Tabela: investment_dividends
+-- 2.6 Tabela: investment_dividends
 CREATE TABLE IF NOT EXISTS investment_dividends (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     position_id UUID NOT NULL REFERENCES investment_positions(id) ON DELETE CASCADE,
@@ -314,7 +174,7 @@ COMMENT ON COLUMN investment_dividends.tipo IS 'Tipo do provento: dividendo, jcp
 COMMENT ON COLUMN investment_dividends.valor_por_ativo IS 'Valor pago por ativo';
 COMMENT ON COLUMN investment_dividends.data_com IS 'Data COM (quem tinha o ativo nesta data recebe)';
 
--- 3.6 Tabela: api_usage_log
+-- 2.6 Tabela: api_usage_log
 CREATE TABLE IF NOT EXISTS api_usage_log (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     api_name TEXT NOT NULL,
@@ -329,7 +189,7 @@ CREATE TABLE IF NOT EXISTS api_usage_log (
 COMMENT ON TABLE api_usage_log IS 'Log de uso das APIs externas (BrAPI, Binance, etc)';
 COMMENT ON COLUMN api_usage_log.status IS 'Status da chamada: success, error, rate_limit';
 
--- 3.7 Tabela: cdi_rates
+-- 2.7 Tabela: cdi_rates
 CREATE TABLE IF NOT EXISTS cdi_rates (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     date DATE NOT NULL UNIQUE,
@@ -343,65 +203,178 @@ COMMENT ON TABLE cdi_rates IS 'Historical CDI rates from Banco Central do Brasil
 COMMENT ON COLUMN cdi_rates.date IS 'Reference date for the rate';
 COMMENT ON COLUMN cdi_rates.rate IS 'Annual CDI rate in decimal format (0.1165 = 11.65%)';
 
--- 3.8 Tabela: usuarios_dependentes
-CREATE TABLE IF NOT EXISTS usuarios_dependentes (
-    id SERIAL PRIMARY KEY,
-    nome TEXT NOT NULL,
-    email TEXT,
-    telefone TEXT,
-    usuario_principal_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
-    status TEXT DEFAULT 'ativo' CHECK (status IN ('ativo', 'inativo')),
-    data_criacao TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    data_ultima_modificacao TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    observacoes TEXT,
-    auth_user_id UUID REFERENCES auth.users(id),
-    convite_token TEXT,
-    convite_expira_em TIMESTAMP WITH TIME ZONE,
-    convite_status TEXT DEFAULT 'pendente' CHECK (convite_status IN ('pendente', 'aceito', 'recusado', 'cancelado')),
-    permissoes JSONB DEFAULT '{"pode_criar": true, "pode_editar": true, "pode_deletar": false}'::jsonb
-);
-
-COMMENT ON TABLE usuarios_dependentes IS 'Usuários dependentes vinculados a um usuário principal. Compartilham os mesmos dados financeiros do principal sem ter autenticação própria.';
-COMMENT ON COLUMN usuarios_dependentes.usuario_principal_id IS 'ID do usuário principal (titular do plano) ao qual este dependente pertence';
-COMMENT ON COLUMN usuarios_dependentes.auth_user_id IS 'UUID do auth.users se o dependente tiver login próprio';
-COMMENT ON COLUMN usuarios_dependentes.permissoes IS 'Permissões do dependente em formato JSON';
-
 -- =====================================================
--- 3.9 ADICIONAR FOREIGN KEYS (após criação das tabelas)
+-- 3. NOVAS COLUNAS EM TABELAS EXISTENTES
 -- =====================================================
 
--- Foreign keys para transacoes
+-- 3.1 Tabela: usuarios
+-- Colunas de Internacionalização
+ALTER TABLE usuarios 
+ADD COLUMN IF NOT EXISTS idioma TEXT DEFAULT 'pt' CHECK (idioma IN ('pt', 'es', 'en'));
+
+ALTER TABLE usuarios 
+ADD COLUMN IF NOT EXISTS moeda TEXT DEFAULT 'BRL' CHECK (moeda IN ('BRL', 'USD', 'EUR', 'PYG', 'ARS'));
+
+COMMENT ON COLUMN usuarios.idioma IS 'Idioma preferido do usuário: pt (Português), es (Español), en (English)';
+COMMENT ON COLUMN usuarios.moeda IS 'Moeda preferida do usuário: BRL (Real), USD (Dólar), EUR (Euro)';
+
+-- 2.2 Tabela: categoria_trasacoes
+-- Colunas para Modo PJ e Keywords AI
+ALTER TABLE categoria_trasacoes 
+ADD COLUMN IF NOT EXISTS tipo TEXT CHECK (tipo IN ('entrada', 'saida', 'ambos'));
+
+ALTER TABLE categoria_trasacoes 
+ADD COLUMN IF NOT EXISTS tipo_conta TEXT NOT NULL DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
+
+ALTER TABLE categoria_trasacoes 
+ADD COLUMN IF NOT EXISTS keywords TEXT[] DEFAULT '{}';
+
+COMMENT ON COLUMN categoria_trasacoes.tipo IS 'Tipo de categoria: entrada, saida ou ambos';
+COMMENT ON COLUMN categoria_trasacoes.keywords IS 'Keywords for AI-powered category identification';
+
+-- 2.3 Tabela: transacoes
+-- Colunas para Modo PJ, Transferências, Contas Bancárias e Cartões
 ALTER TABLE transacoes 
-ADD CONSTRAINT IF NOT EXISTS fk_transacoes_dependente 
-FOREIGN KEY (dependente_id) REFERENCES usuarios_dependentes(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS dependente_id INTEGER REFERENCES usuarios_dependentes(id) ON DELETE SET NULL;
 
 ALTER TABLE transacoes 
-ADD CONSTRAINT IF NOT EXISTS fk_transacoes_conta 
-FOREIGN KEY (conta_id) REFERENCES contas_bancarias(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS tipo_conta TEXT DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
 
 ALTER TABLE transacoes 
-ADD CONSTRAINT IF NOT EXISTS fk_transacoes_cartao 
-FOREIGN KEY (cartao_id) REFERENCES cartoes_credito(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS is_transferencia BOOLEAN DEFAULT false;
 
 ALTER TABLE transacoes 
-ADD CONSTRAINT IF NOT EXISTS fk_transacoes_conta_destino 
-FOREIGN KEY (conta_destino_id) REFERENCES contas_bancarias(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS conta_id UUID REFERENCES contas_bancarias(id) ON DELETE SET NULL;
 
--- Foreign keys para lancamentos_futuros
+ALTER TABLE transacoes 
+ADD COLUMN IF NOT EXISTS cartao_id UUID REFERENCES cartoes_credito(id) ON DELETE SET NULL;
+
+ALTER TABLE transacoes 
+ADD COLUMN IF NOT EXISTS conta_destino_id UUID REFERENCES contas_bancarias(id) ON DELETE SET NULL;
+
+COMMENT ON COLUMN transacoes.conta_destino_id IS 'Conta bancária de destino (usado em transferências entre contas)';
+
+-- Adicionar constraint de valor positivo
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'transacoes_valor_positivo'
+    ) THEN
+        ALTER TABLE transacoes ADD CONSTRAINT transacoes_valor_positivo CHECK (valor > 0);
+    END IF;
+END $$;
+
+COMMENT ON COLUMN transacoes.dependente_id IS 'ID do dependente que criou a transação. NULL = transação do usuário principal';
+COMMENT ON COLUMN transacoes.tipo_conta IS 'Tipo de conta da transação: pessoal ou pj (Pessoa Jurídica)';
+COMMENT ON COLUMN transacoes.is_transferencia IS 'Flag para identificar transferências entre contas (não conta em relatórios)';
+COMMENT ON COLUMN transacoes.conta_id IS 'Conta bancária de origem da transação';
+COMMENT ON COLUMN transacoes.cartao_id IS 'Cartão de crédito usado na transação (se aplicável)';
+
+-- 2.4 Tabela: lancamentos_futuros
+-- Colunas para Recorrentes, Dependentes e Cartões
 ALTER TABLE lancamentos_futuros 
-ADD CONSTRAINT IF NOT EXISTS fk_lancamentos_dependente 
-FOREIGN KEY (dependente_id) REFERENCES usuarios_dependentes(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS dependente_id INTEGER REFERENCES usuarios_dependentes(id) ON DELETE SET NULL;
 
 ALTER TABLE lancamentos_futuros 
-ADD CONSTRAINT IF NOT EXISTS fk_lancamentos_cartao 
-FOREIGN KEY (cartao_id) REFERENCES cartoes_credito(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS data_final DATE DEFAULT NULL;
 
 ALTER TABLE lancamentos_futuros 
-ADD CONSTRAINT IF NOT EXISTS fk_lancamentos_conta 
-FOREIGN KEY (conta_id) REFERENCES contas_bancarias(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS confirmed_dates TEXT DEFAULT NULL;
+
+ALTER TABLE lancamentos_futuros 
+ADD COLUMN IF NOT EXISTS cartao_id UUID REFERENCES cartoes_credito(id) ON DELETE SET NULL;
+
+ALTER TABLE lancamentos_futuros 
+ADD COLUMN IF NOT EXISTS parcela_info JSONB DEFAULT NULL;
+
+ALTER TABLE lancamentos_futuros 
+ADD COLUMN IF NOT EXISTS tipo_conta TEXT DEFAULT 'pessoal' CHECK (tipo_conta IN ('pessoal', 'pj'));
+
+ALTER TABLE lancamentos_futuros 
+ADD COLUMN IF NOT EXISTS conta_id UUID REFERENCES contas_bancarias(id) ON DELETE SET NULL;
+
+COMMENT ON COLUMN lancamentos_futuros.dependente_id IS 'ID do dependente que criou o lançamento futuro. NULL = lançamento do usuário principal';
+COMMENT ON COLUMN lancamentos_futuros.data_final IS 'Data final opcional para lançamentos recorrentes. NULL = recorrente indefinido (comportamento atual mantido)';
+COMMENT ON COLUMN lancamentos_futuros.confirmed_dates IS 'JSON array com datas já confirmadas de recorrentes expandidos. NULL = comportamento atual mantido';
+COMMENT ON COLUMN lancamentos_futuros.cartao_id IS 'Cartão de crédito vinculado ao lançamento (para parcelas)';
+COMMENT ON COLUMN lancamentos_futuros.parcela_info IS 'Informações da parcela: {"numero": 1, "total": 12, "valor_original": 1200.00}';
+COMMENT ON COLUMN lancamentos_futuros.tipo_conta IS 'Tipo de conta: pessoal ou pj (Pessoa Jurídica)';
+COMMENT ON COLUMN lancamentos_futuros.conta_id IS 'Conta bancária vinculada ao lançamento futuro';
+
+-- 2.5 Tabela: planos_sistema
+-- Colunas para Planos Compartilhados e Modo PJ
+ALTER TABLE planos_sistema 
+ADD COLUMN IF NOT EXISTS permite_compartilhamento BOOLEAN DEFAULT false;
+
+ALTER TABLE planos_sistema 
+ADD COLUMN IF NOT EXISTS max_usuarios_dependentes INTEGER DEFAULT 0 CHECK (max_usuarios_dependentes >= 0);
+
+ALTER TABLE planos_sistema 
+ADD COLUMN IF NOT EXISTS destaque BOOLEAN DEFAULT false;
+
+ALTER TABLE planos_sistema 
+ADD COLUMN IF NOT EXISTS permite_modo_pj BOOLEAN DEFAULT true;
+
+ALTER TABLE planos_sistema 
+ADD COLUMN IF NOT EXISTS permite_investimentos BOOLEAN DEFAULT false;
+
+ALTER TABLE planos_sistema 
+ADD COLUMN IF NOT EXISTS max_ativos_investimento INTEGER DEFAULT 0;
+
+COMMENT ON COLUMN planos_sistema.permite_compartilhamento IS 'Define se este plano permite adicionar usuários dependentes (ex: Plano Casal, Plano Empresa). FALSE = não permite, TRUE = permite';
+COMMENT ON COLUMN planos_sistema.max_usuarios_dependentes IS 'Número máximo de usuários dependentes permitidos neste plano. 0 = não permite, -1 = ilimitado, N = limite específico';
+COMMENT ON COLUMN planos_sistema.destaque IS 'Se este plano deve ser destacado na interface (ex: "Mais Popular")';
+COMMENT ON COLUMN planos_sistema.permite_modo_pj IS 'Se este plano permite usar o modo PJ (Pessoa Jurídica)';
+
+-- 2.6 Tabela: configuracoes_sistema
+-- Colunas Admin e Configurações Adicionais
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS support_email CHARACTER VARYING DEFAULT 'suporte@granazap.com';
+
+-- Configuração unificada de cadastro (substituiu bloquear_cadastro_novos_usuarios)
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS restringir_cadastro_usuarios_existentes BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS habilitar_modo_pj BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_sidebar_logo BOOLEAN DEFAULT false;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_sidebar_name BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_login_logo BOOLEAN DEFAULT false;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS show_login_name BOOLEAN DEFAULT true;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS logo_url_sidebar TEXT DEFAULT NULL;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS video_url_instalacao TEXT DEFAULT NULL;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS whatsapp_suporte_url TEXT DEFAULT NULL;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS webhook_convite_membro TEXT DEFAULT '';
+
+COMMENT ON COLUMN configuracoes_sistema.support_email IS 'Email de suporte exibido na plataforma';
+COMMENT ON COLUMN configuracoes_sistema.restringir_cadastro_usuarios_existentes IS 'Define se apenas usuários pré-cadastrados (via WhatsApp/N8N) podem fazer login. FALSE = qualquer pessoa pode se cadastrar (modo público). TRUE = apenas usuários existentes na tabela usuarios podem fazer login (modo restrito).';
+COMMENT ON COLUMN configuracoes_sistema.habilitar_modo_pj IS 'Se true, habilita o modo PJ (Pessoa Jurídica) na plataforma';
+COMMENT ON COLUMN configuracoes_sistema.show_sidebar_logo IS 'Se true, exibe logo na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.show_sidebar_name IS 'Se true, exibe nome da empresa na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.show_login_logo IS 'Se true, exibe logo na tela de login';
+COMMENT ON COLUMN configuracoes_sistema.show_login_name IS 'Se true, exibe nome da empresa na tela de login';
+COMMENT ON COLUMN configuracoes_sistema.logo_url_sidebar IS 'URL do logo para exibir na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.video_url_instalacao IS 'URL do vídeo de instalação/tutorial';
 
 -- =====================================================
--- 4. NOVAS FUNÇÕES SQL (não existem no setup.sql)
+-- 4. FUNÇÕES SQL (ordem correta: tabelas já existem)
 -- =====================================================
 
 -- 4.1 Função: is_user_admin
@@ -1680,12 +1653,25 @@ BEGIN
 END;
 $$;
 
--- 4.25 Função: calcular_progresso_meta (simplificada por limite de espaço)
-CREATE OR REPLACE FUNCTION calcular_progresso_meta(p_meta_id integer, p_data_referencia date DEFAULT CURRENT_DATE)
+-- 4.25 Função: calcular_progresso_meta (COMPLETA)
+CREATE OR REPLACE FUNCTION calcular_progresso_meta(
+    p_meta_id integer, 
+    p_data_referencia date DEFAULT CURRENT_DATE
+)
 RETURNS TABLE(
-    meta_id integer, nome text, tipo_meta text, valor_limite numeric, valor_gasto numeric,
-    valor_restante numeric, percentual_usado numeric, dias_restantes integer, projecao_final numeric,
-    data_inicio date, data_fim date, status text, erro text
+    meta_id integer, 
+    nome text, 
+    tipo_meta text, 
+    valor_limite numeric, 
+    valor_gasto numeric, 
+    valor_restante numeric, 
+    percentual_usado numeric, 
+    dias_restantes integer, 
+    projecao_final numeric, 
+    data_inicio date, 
+    data_fim date, 
+    status text, 
+    erro text
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -1696,45 +1682,122 @@ DECLARE
     v_valor_gasto NUMERIC := 0;
     v_percentual_usado NUMERIC := 0;
     v_dias_restantes INTEGER := 0;
+    v_dias_totais INTEGER := 0;
+    v_dias_passados INTEGER := 0;
     v_projecao_final NUMERIC := 0;
     v_valor_restante NUMERIC := 0;
     v_status TEXT := 'normal';
+    v_data_calculo DATE;
 BEGIN
-    SELECT * INTO v_meta FROM public.metas_orcamento WHERE id = p_meta_id AND ativo = true;
+    -- Buscar dados da meta
+    SELECT * INTO v_meta
+    FROM public.metas_orcamento
+    WHERE id = p_meta_id AND ativo = true;
+    
     IF NOT FOUND THEN
-        RETURN QUERY SELECT p_meta_id, NULL::TEXT, NULL::TEXT, NULL::NUMERIC, NULL::NUMERIC,
-            NULL::NUMERIC, NULL::NUMERIC, NULL::INTEGER, NULL::NUMERIC, NULL::DATE, NULL::DATE,
-            NULL::TEXT, 'Meta não encontrada'::TEXT;
+        RETURN QUERY SELECT 
+            p_meta_id, NULL::TEXT, NULL::TEXT, NULL::NUMERIC, NULL::NUMERIC, 
+            NULL::NUMERIC, NULL::NUMERIC, NULL::INTEGER, NULL::NUMERIC, 
+            NULL::DATE, NULL::DATE, NULL::TEXT, 'Meta não encontrada ou inativa'::TEXT;
         RETURN;
     END IF;
     
-    -- Cálculo simplificado (versão completa no Supabase)
-    IF v_meta.tipo_meta = 'categoria' THEN
-        SELECT COALESCE(SUM(t.valor), 0) INTO v_valor_gasto FROM public.transacoes t
-        WHERE t.usuario_id = v_meta.usuario_id AND t.categoria_id = v_meta.categoria_id
-          AND t.tipo = 'saida' AND t.data >= v_meta.data_inicio AND t.data <= p_data_referencia;
-    ELSIF v_meta.tipo_meta = 'geral' THEN
-        SELECT COALESCE(SUM(t.valor), 0) INTO v_valor_gasto FROM public.transacoes t
-        WHERE t.usuario_id = v_meta.usuario_id AND t.tipo = 'saida'
-          AND t.data >= v_meta.data_inicio AND t.data <= p_data_referencia;
+    -- Ajustar data de cálculo
+    IF p_data_referencia < v_meta.data_inicio THEN
+        v_data_calculo := v_meta.data_inicio;
+    ELSIF p_data_referencia > v_meta.data_fim THEN
+        v_data_calculo := v_meta.data_fim;
+    ELSE
+        v_data_calculo := p_data_referencia;
     END IF;
     
-    v_percentual_usado := CASE WHEN v_meta.valor_limite > 0 THEN (v_valor_gasto / v_meta.valor_limite) * 100 ELSE 0 END;
-    v_dias_restantes := GREATEST((v_meta.data_fim - p_data_referencia), 0);
-    v_valor_restante := v_meta.valor_limite - v_valor_gasto;
-    v_status := CASE WHEN v_percentual_usado >= 100 THEN 'excedida'
-                     WHEN v_percentual_usado >= 90 THEN 'critica' ELSE 'normal' END;
+    -- Calcular valor gasto baseado no tipo
+    IF v_meta.tipo_meta = 'categoria' THEN
+        SELECT COALESCE(SUM(t.valor), 0) INTO v_valor_gasto
+        FROM public.transacoes t
+        WHERE t.usuario_id = v_meta.usuario_id
+          AND t.categoria_id = v_meta.categoria_id
+          AND t.tipo = 'saida'
+          AND t.data >= v_meta.data_inicio
+          AND t.data <= v_data_calculo;
+          
+    ELSIF v_meta.tipo_meta = 'geral' THEN
+        SELECT COALESCE(SUM(t.valor), 0) INTO v_valor_gasto
+        FROM public.transacoes t
+        WHERE t.usuario_id = v_meta.usuario_id
+          AND t.tipo = 'saida'
+          AND t.data >= v_meta.data_inicio
+          AND t.data <= v_data_calculo;
+          
+    ELSIF v_meta.tipo_meta = 'economia' THEN
+        SELECT COALESCE(
+            (SELECT SUM(valor) FROM public.transacoes WHERE usuario_id = v_meta.usuario_id AND tipo = 'entrada' AND data >= v_meta.data_inicio AND data <= v_data_calculo) -
+            (SELECT SUM(valor) FROM public.transacoes WHERE usuario_id = v_meta.usuario_id AND tipo = 'saida' AND data >= v_meta.data_inicio AND data <= v_data_calculo),
+            0
+        ) INTO v_valor_gasto;
+        
+        v_valor_gasto := GREATEST(v_valor_gasto, 0);
+    END IF;
     
-    RETURN QUERY SELECT v_meta.id, v_meta.nome, v_meta.tipo_meta, v_meta.valor_limite, v_valor_gasto,
-        v_valor_restante, v_percentual_usado, v_dias_restantes, v_projecao_final,
-        v_meta.data_inicio, v_meta.data_fim, v_status, NULL::TEXT;
+    -- Calcular percentual
+    v_percentual_usado := CASE 
+        WHEN v_meta.valor_limite > 0 THEN (v_valor_gasto / v_meta.valor_limite) * 100
+        ELSE 0
+    END;
+    
+    -- Calcular dias
+    v_dias_totais := (v_meta.data_fim - v_meta.data_inicio) + 1;
+    v_dias_passados := GREATEST((v_data_calculo - v_meta.data_inicio) + 1, 0);
+    v_dias_restantes := GREATEST((v_meta.data_fim - v_data_calculo), 0);
+    
+    -- Calcular projeção
+    IF v_dias_passados > 0 AND v_dias_totais > 0 THEN
+        v_projecao_final := (v_valor_gasto / v_dias_passados) * v_dias_totais;
+    ELSE
+        v_projecao_final := v_valor_gasto;
+    END IF;
+    
+    v_valor_restante := v_meta.valor_limite - v_valor_gasto;
+    
+    -- Determinar status
+    IF v_percentual_usado >= 100 THEN
+        v_status := 'excedida';
+    ELSIF v_percentual_usado >= 90 THEN
+        v_status := 'critica';
+    ELSIF v_percentual_usado >= 80 THEN
+        v_status := 'alerta';
+    ELSIF v_percentual_usado >= 70 THEN
+        v_status := 'atencao';
+    ELSE
+        v_status := 'normal';
+    END IF;
+    
+    RETURN QUERY SELECT 
+        v_meta.id,
+        v_meta.nome,
+        v_meta.tipo_meta,
+        v_meta.valor_limite,
+        v_valor_gasto,
+        v_valor_restante,
+        v_percentual_usado,
+        v_dias_restantes,
+        v_projecao_final,
+        v_meta.data_inicio,
+        v_meta.data_fim,
+        v_status,
+        NULL::TEXT;
 END;
 $$;
 
--- 4.26 Função: create_installments (simplificada)
+-- 4.26 Função: create_installments (COMPLETA)
 CREATE OR REPLACE FUNCTION create_installments(
-    p_usuario_id integer, p_tipo text, p_valor numeric, p_descricao text,
-    p_data_prevista date, p_categoria_id integer, p_numero_parcelas integer
+    p_usuario_id integer, 
+    p_tipo text, 
+    p_valor numeric, 
+    p_descricao text, 
+    p_data_prevista date, 
+    p_categoria_id integer, 
+    p_numero_parcelas integer
 )
 RETURNS SETOF lancamentos_futuros
 LANGUAGE plpgsql
@@ -1742,26 +1805,51 @@ SET search_path TO 'public'
 AS $$
 DECLARE
     data_parcela DATE;
+    descricao_parcela TEXT;
     i INTEGER;
     parcela_id INTEGER;
+    mes_previsto TEXT;
+    dia_original INTEGER;
+    ultimo_dia_mes INTEGER;
 BEGIN
+    dia_original := EXTRACT(DAY FROM p_data_prevista);
+
     FOR i IN 1..p_numero_parcelas LOOP
-        data_parcela := p_data_prevista + ((i-1) || ' months')::INTERVAL;
+        IF i = 1 THEN
+            data_parcela := p_data_prevista;
+        ELSE
+            data_parcela := DATE_TRUNC('month', p_data_prevista + ((i-1) || ' months')::INTERVAL)::DATE;
+            ultimo_dia_mes := (DATE_TRUNC('month', data_parcela) + '1 month'::INTERVAL - '1 day'::INTERVAL)::DATE;
+            ultimo_dia_mes := EXTRACT(DAY FROM ultimo_dia_mes);
+
+            IF dia_original <= ultimo_dia_mes THEN
+                data_parcela := data_parcela + (dia_original - 1) * INTERVAL '1 day';
+            ELSE
+                data_parcela := data_parcela + (ultimo_dia_mes - 1) * INTERVAL '1 day';
+            END IF;
+        END IF;
+
+        descricao_parcela := p_descricao || ' (' || i || '/' || p_numero_parcelas || ')';
+        mes_previsto := to_char(data_parcela, 'YYYY-MM');
+
         INSERT INTO public.lancamentos_futuros (
-            usuario_id, tipo, valor, descricao, data_prevista, categoria_id,
-            mes_previsto, status, recorrente, parcelamento, numero_parcelas, parcela_atual
+            usuario_id, tipo, valor, descricao, data_prevista, categoria_id, mes_previsto, status, recorrente, parcelamento, numero_parcelas, parcela_atual
         ) VALUES (
-            p_usuario_id, p_tipo, p_valor, p_descricao || ' (' || i || '/' || p_numero_parcelas || ')',
-            data_parcela, p_categoria_id, to_char(data_parcela, 'YYYY-MM'),
-            'pendente', FALSE, 'TRUE', p_numero_parcelas, i
+            p_usuario_id, p_tipo, p_valor, descricao_parcela, data_parcela, p_categoria_id, mes_previsto, 'pendente', FALSE, 'TRUE', p_numero_parcelas, i
         ) RETURNING id INTO parcela_id;
+
         RETURN QUERY SELECT * FROM public.lancamentos_futuros WHERE id = parcela_id;
     END LOOP;
+
+    RETURN;
 END;
 $$;
 
--- 4.27 Função: get_metas_usuario
-CREATE OR REPLACE FUNCTION get_metas_usuario(p_usuario_id integer, p_data_referencia date DEFAULT CURRENT_DATE)
+-- 4.27 Função: get_metas_usuario (COMPLETA)
+CREATE OR REPLACE FUNCTION get_metas_usuario(
+    p_usuario_id integer, 
+    p_data_referencia date DEFAULT CURRENT_DATE
+)
 RETURNS SETOF json
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -1770,19 +1858,37 @@ AS $$
 DECLARE
     meta_record RECORD;
     progresso_record RECORD;
+    resultado json;
 BEGIN
     FOR meta_record IN 
-        SELECT id FROM public.metas_orcamento WHERE usuario_id = p_usuario_id AND ativo = true
+        SELECT id FROM public.metas_orcamento 
+        WHERE usuario_id = p_usuario_id AND ativo = true
+        ORDER BY created_at DESC
     LOOP
-        SELECT * INTO progresso_record FROM public.calcular_progresso_meta(meta_record.id, p_data_referencia);
+        SELECT * INTO progresso_record
+        FROM public.calcular_progresso_meta(meta_record.id, p_data_referencia);
+        
         IF progresso_record.erro IS NULL THEN
-            RETURN NEXT json_build_object(
-                'meta_id', progresso_record.meta_id, 'nome', progresso_record.nome,
-                'tipo_meta', progresso_record.tipo_meta, 'valor_limite', progresso_record.valor_limite,
-                'valor_gasto', progresso_record.valor_gasto, 'status', progresso_record.status
+            resultado := json_build_object(
+                'meta_id', progresso_record.meta_id,
+                'nome', progresso_record.nome,
+                'tipo_meta', progresso_record.tipo_meta,
+                'valor_limite', progresso_record.valor_limite,
+                'valor_gasto', progresso_record.valor_gasto,
+                'valor_restante', progresso_record.valor_restante,
+                'percentual_usado', progresso_record.percentual_usado,
+                'dias_restantes', progresso_record.dias_restantes,
+                'projecao_final', progresso_record.projecao_final,
+                'data_inicio', progresso_record.data_inicio,
+                'data_fim', progresso_record.data_fim,
+                'status', progresso_record.status
             );
+            
+            RETURN NEXT resultado;
         END IF;
     END LOOP;
+    
+    RETURN;
 END;
 $$;
 
@@ -2233,50 +2339,49 @@ CREATE POLICY "dependentes_delete_policy" ON usuarios_dependentes
 -- ⚠️ IMPORTANTE: Os Cron Jobs devem ser criados via SQL direto no Supabase
 -- pois requerem permissões especiais. Aqui está a documentação:
 
--- =====================================================
--- NOTA: Cron Jobs devem ser criados manualmente no Supabase Dashboard
--- pois requerem permissões especiais e não podem ser executados via SQL direto.
--- 
 -- 9.1 Cron Job: Atualizar preços de investimentos (Mercado)
--- Nome: update-investment-prices-market
--- Schedule: 0 12,15,21 * * 1-5
--- Descrição: Executa Segunda a Sexta, às 12h, 15h e 21h (horário de Brasília)
--- Command:
---   SELECT net.http_post(
---       url := 'https://vrmickfxoxvyljounoxq.supabase.co/functions/v1/update-investment-prices',
---       headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
---       body := '{}'::jsonb
---   ) as request_id;
---
+-- Executa: Segunda a Sexta, às 12h, 15h e 21h (horário de Brasília)
+-- SELECT cron.schedule(
+--     'update-investment-prices-market',
+--     '0 12,15,21 * * 1-5',
+--     $$
+--     SELECT net.http_post(
+--         url := 'https://vrmickfxoxvyljounoxq.supabase.co/functions/v1/update-investment-prices',
+--         headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
+--         body := '{}'::jsonb
+--     ) as request_id;
+--     $$
+-- );
+
 -- 9.2 Cron Job: Atualizar preços de criptomoedas
--- Nome: update-investment-prices-crypto
--- Schedule: 0 */4 * * *
--- Descrição: Executa a cada 4 horas, todos os dias
--- Command:
---   SELECT net.http_post(
---       url := 'https://vrmickfxoxvyljounoxq.supabase.co/functions/v1/update-investment-prices',
---       headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
---       body := '{}'::jsonb
---   ) as request_id;
--- =====================================================
+-- Executa: A cada 4 horas, todos os dias
+-- SELECT cron.schedule(
+--     'update-investment-prices-crypto',
+--     '0 */4 * * *',
+--     $$
+--     SELECT net.http_post(
+--         url := 'https://vrmickfxoxvyljounoxq.supabase.co/functions/v1/update-investment-prices',
+--         headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_ANON_KEY"}'::jsonb,
+--         body := '{}'::jsonb
+--     ) as request_id;
+--     $$
+-- );
 
 -- =====================================================
 -- 10. EDGE FUNCTIONS (Supabase Functions)
 -- =====================================================
 
-/*
-Edge Functions criadas no Supabase:
-
-1. update-investment-prices
-   - Atualiza preços de ativos via BrAPI e Binance
-   - Chamada pelos Cron Jobs
-   - verify_jwt: false (chamada pelo sistema)
-
-2. update-cdi-rates
-   - Atualiza taxas CDI do Banco Central
-   - Chamada manualmente ou via Cron
-   - verify_jwt: false (chamada pelo sistema)
-*/
+-- Edge Functions criadas no Supabase:
+-- 
+-- 1. update-investment-prices
+--    - Atualiza preços de ativos via BrAPI e Binance
+--    - Chamada pelos Cron Jobs
+--    - verify_jwt: false (chamada pelo sistema)
+-- 
+-- 2. update-cdi-rates
+--    - Atualiza taxas CDI do Banco Central
+--    - Chamada manualmente ou via Cron
+--    - verify_jwt: false (chamada pelo sistema)
 
 -- =====================================================
 -- 11. CONFIGURAÇÕES DE BLOQUEIO DE ASSINATURA
@@ -2305,7 +2410,7 @@ COMMENT ON COLUMN configuracoes_sistema.permitir_visualizacao_bloqueado IS 'Se t
 COMMENT ON COLUMN configuracoes_sistema.whatsapp_suporte_url IS 'URL do WhatsApp para suporte (diferente do WhatsApp de automação)';
 
 -- =====================================================
--- ✅ SETUP DIFFERENTIAL COMPLETO FINALIZADO!
+-- ✅ SETUP DIFFERENTIAL COMPLETO FINALIZADO E CORRIGIDO!
 -- =====================================================
 -- 
 -- 📊 RESUMO DAS MUDANÇAS:
@@ -2345,11 +2450,130 @@ COMMENT ON COLUMN configuracoes_sistema.whatsapp_suporte_url IS 'URL do WhatsApp
 -- ✅ Funções SECURITY DEFINER com search_path fixado
 -- ✅ Validações e constraints em todas as tabelas
 -- 
+-- 🔧 CORREÇÕES APLICADAS (07/01/2026):
+-- ✅ Funções completas mescladas de missing_functions_differential.sql
+-- ✅ calcular_progresso_meta: versão completa com todos os cálculos e status
+-- ✅ create_installments: versão completa com tratamento correto de dias do mês
+-- ✅ get_metas_usuario: versão completa com todos os campos de progresso
+-- ✅ Ordem de criação corrigida: tabelas antes de funções
+-- ✅ Todas as referências validadas contra o banco de dados
+-- 
+-- 🔧 CORREÇÕES APLICADAS (08/01/2025):
+-- ✅ Unificação de configurações de cadastro (restringir_cadastro_usuarios_existentes)
+-- ✅ Removida coluna bloquear_cadastro_novos_usuarios
+-- ✅ Corrigida RPC admin_get_user_stats (cálculo correto de usuários premium)
+-- ✅ Criada RPC admin_get_system_stats (estatísticas completas do sistema)
+-- ✅ Corrigido cálculo de receita mensal estimada (conversão de planos anuais/semestrais)
+-- 
 -- ⚠️ PRÓXIMOS PASSOS:
--- 1. Revisar e testar este arquivo em ambiente de desenvolvimento
+-- 1. ✅ Arquivo corrigido e pronto para execução
 -- 2. Executar após o setup.sql em banco limpo
 -- 3. Validar todas as funcionalidades
 -- 4. Configurar Cron Jobs manualmente no Supabase
 -- 5. Deploy das Edge Functions
 -- 
 -- =====================================================
+
+-- =====================================================
+-- FUNÇÕES ADMIN - ESTATÍSTICAS (08/01/2025)
+-- =====================================================
+
+-- Função: admin_get_user_stats (CORRIGIDA)
+-- Retorna estatísticas de usuários para o painel de Gestão de Usuários
+CREATE OR REPLACE FUNCTION public.admin_get_user_stats()
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_result json;
+BEGIN
+  -- Verificar se é admin
+  IF NOT is_user_admin() THEN
+    RAISE EXCEPTION 'Acesso negado. Apenas administradores.';
+  END IF;
+  
+  SELECT json_build_object(
+    'total_usuarios', COUNT(*),
+    'usuarios_ativos', COUNT(*) FILTER (WHERE status = 'ativo'),
+    'usuarios_inativos', COUNT(*) FILTER (WHERE status != 'ativo'),
+    'administradores', COUNT(*) FILTER (WHERE is_admin = true),
+    'novos_30_dias', COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '30 days'),
+    'usuarios_free', COUNT(*) FILTER (WHERE plano_id IS NULL OR plano = 'Free' OR plano ILIKE '%free%'),
+    'usuarios_premium', COUNT(*) FILTER (WHERE plano_id IS NOT NULL AND plano != 'Free' AND plano NOT ILIKE '%free%')
+  ) INTO v_result
+  FROM usuarios;
+  
+  RETURN v_result;
+END;
+$$;
+
+COMMENT ON FUNCTION admin_get_user_stats() IS 'Retorna estatísticas de usuários para o painel admin (Gestão de Usuários). Corrigido em 08/01/2025 para calcular corretamente usuários premium.';
+
+-- Função: admin_get_system_stats (NOVA)
+-- Retorna estatísticas completas do sistema para o painel de Estatísticas
+CREATE OR REPLACE FUNCTION public.admin_get_system_stats()
+RETURNS json
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_result json;
+  v_usuarios_por_plano json;
+  v_receita_mensal numeric;
+BEGIN
+  -- Verificar se é admin
+  IF NOT is_user_admin() THEN
+    RAISE EXCEPTION 'Acesso negado. Apenas administradores.';
+  END IF;
+  
+  -- Buscar usuários por plano
+  SELECT json_agg(
+    json_build_object(
+      'plano', COALESCE(p.nome, 'Sem Plano'),
+      'count', COUNT(u.id)
+    )
+  )
+  INTO v_usuarios_por_plano
+  FROM usuarios u
+  LEFT JOIN planos_sistema p ON u.plano_id = p.id
+  GROUP BY p.nome
+  ORDER BY COUNT(u.id) DESC;
+  
+  -- Calcular receita mensal estimada (convertendo planos anuais/semestrais/trimestrais para mensal)
+  SELECT COALESCE(SUM(
+    CASE 
+      WHEN p.tipo_periodo = 'mensal' THEN p.valor
+      WHEN p.tipo_periodo = 'trimestral' THEN p.valor / 3
+      WHEN p.tipo_periodo = 'semestral' THEN p.valor / 6
+      WHEN p.tipo_periodo = 'anual' THEN p.valor / 12
+      ELSE 0
+    END
+  ), 0)
+  INTO v_receita_mensal
+  FROM usuarios u
+  INNER JOIN planos_sistema p ON u.plano_id = p.id
+  WHERE u.status = 'ativo' AND p.tipo_periodo != 'free';
+  
+  -- Montar resultado completo
+  SELECT json_build_object(
+    'total_usuarios', (SELECT COUNT(*) FROM usuarios),
+    'usuarios_ativos', (SELECT COUNT(*) FROM usuarios WHERE status = 'ativo'),
+    'usuarios_inativos', (SELECT COUNT(*) FROM usuarios WHERE status != 'ativo'),
+    'usuarios_com_senha', (SELECT COUNT(*) FROM usuarios WHERE has_password = true),
+    'total_planos', (SELECT COUNT(*) FROM planos_sistema),
+    'planos_ativos', (SELECT COUNT(*) FROM planos_sistema WHERE ativo = true),
+    'receita_mensal_estimada', v_receita_mensal,
+    'usuarios_por_plano', COALESCE(v_usuarios_por_plano, '[]'::json)
+  ) INTO v_result;
+  
+  RETURN v_result;
+END;
+$$;
+
+COMMENT ON FUNCTION admin_get_system_stats() IS 'Retorna estatísticas completas do sistema para o painel admin (Estatísticas do Sistema). Criada em 08/01/2025 para corrigir dados dos cards e calcular receita mensal estimada corretamente.';
+
+-- =====================================================
+

@@ -26,14 +26,14 @@ export async function signupUser(data: SignupData): Promise<SignupResult> {
   try {
     const supabase = createClient();
 
-    // Verificar se cadastros estão bloqueados
+    // Verificar se cadastros estão restritos apenas a usuários existentes
     const { data: config } = await supabase
       .from('configuracoes_sistema')
-      .select('bloquear_cadastro_novos_usuarios')
+      .select('restringir_cadastro_usuarios_existentes')
       .eq('id', 1)
       .single();
 
-    if (config?.bloquear_cadastro_novos_usuarios === true) {
+    if (config?.restringir_cadastro_usuarios_existentes === true) {
       return {
         success: false,
         error: 'CADASTRO_BLOQUEADO' // Código especial para o modal
