@@ -60,18 +60,31 @@ export function CategoriesPage() {
     try {
       setDeletingId(categoryToDelete.id);
       const supabase = createClient();
-      const { error } = await supabase
-        .from('categoria_trasacoes')
-        .delete()
-        .eq('id', categoryToDelete.id);
+      
+      const { data, error } = await supabase
+        .rpc('delete_category_safe', { p_category_id: categoryToDelete.id });
 
       if (error) throw error;
+
+      if (data && !data.success) {
+        alert(`Erro ao deletar categorias: ${data.error}`);
+        return;
+      }
+
+      if (data && data.success) {
+        const { transacoes_afetadas, lancamentos_afetados } = data;
+        const total = transacoes_afetadas + lancamentos_afetados;
+        
+        if (total > 0) {
+          alert(`Categoria deletada com sucesso! ${total} registro(s) foram atualizados para "Sem Categoria".`);
+        }
+      }
 
       window.dispatchEvent(new CustomEvent('categoriesChanged'));
       setIsDeleteModalOpen(false);
       setCategoryToDelete(null);
     } catch (error) {
-      alert('Erro ao excluir. Tente novamente.');
+      alert('Erro ao deletar categorias: ' + (error as Error).message);
     } finally {
       setDeletingId(null);
     }

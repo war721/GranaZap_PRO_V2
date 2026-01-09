@@ -8,7 +8,7 @@
 -- 
 -- Data de Geração: 22/12/2024 (Atualizado)
 -- Projeto: vrmickfxoxvyljounoxq
--- Última Atualização: 08/01/2025 - Unificação de configurações de cadastro
+-- Última Atualização: 09/01/2025 - Função para deletar categorias com segurança
 -- =====================================================
 
 -- =====================================================
@@ -2574,6 +2574,83 @@ END;
 $$;
 
 COMMENT ON FUNCTION admin_get_system_stats() IS 'Retorna estatísticas completas do sistema para o painel admin (Estatísticas do Sistema). Criada em 08/01/2025 para corrigir dados dos cards e calcular receita mensal estimada corretamente.';
+
+-- =====================================================
+-- 🔧 FUNÇÃO: delete_category_safe
+-- =====================================================
+-- Criada em: 09/01/2025
+-- Descrição: Deleta uma categoria de forma segura, removendo vínculos de 
+--            transações e lançamentos futuros antes da exclusão.
+-- Problema resolvido: Erro "violates foreign key constraint" ao deletar 
+--                     categorias com transações vinculadas.
+-- =====================================================
+
+CREATE OR REPLACE FUNCTION delete_category_safe(p_category_id INTEGER)
+RETURNS JSON
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_user_id INTEGER;
+  v_transacoes_count INTEGER;
+  v_lancamentos_count INTEGER;
+  v_result JSON;
+BEGIN
+  -- Buscar o user_id da categoria para validar ownership
+  SELECT usuario_id INTO v_user_id
+  FROM categoria_trasacoes
+  WHERE id = p_category_id;
+
+  -- Verificar se a categoria existe
+  IF v_user_id IS NULL THEN
+    RETURN json_build_object(
+      'success', false,
+      'error', 'Categoria não encontrada'
+    );
+  END IF;
+
+  -- Verificar se o usuário autenticado é o dono da categoria
+  IF v_user_id != (SELECT id FROM usuarios WHERE auth_user_id = auth.uid()) THEN
+    RETURN json_build_object(
+      'success', false,
+      'error', 'Você não tem permissão para deletar esta categoria'
+    );
+  END IF;
+
+  -- Contar transações vinculadas
+  SELECT COUNT(*) INTO v_transacoes_count
+  FROM transacoes
+  WHERE categoria_id = p_category_id;
+
+  -- Contar lançamentos futuros vinculados
+  SELECT COUNT(*) INTO v_lancamentos_count
+  FROM lancamentos_futuros
+  WHERE categoria_id = p_category_id;
+
+  -- Atualizar transações para categoria_id = NULL
+  UPDATE transacoes
+  SET categoria_id = NULL
+  WHERE categoria_id = p_category_id;
+
+  -- Atualizar lançamentos futuros para categoria_id = NULL
+  UPDATE lancamentos_futuros
+  SET categoria_id = NULL
+  WHERE categoria_id = p_category_id;
+
+  -- Deletar a categoria
+  DELETE FROM categoria_trasacoes
+  WHERE id = p_category_id;
+
+  -- Retornar resultado
+  RETURN json_build_object(
+    'success', true,
+    'transacoes_afetadas', v_transacoes_count,
+    'lancamentos_afetados', v_lancamentos_count
+  );
+END;
+$$;
+
+COMMENT ON FUNCTION delete_category_safe(INTEGER) IS 'Deleta uma categoria de forma segura, removendo vínculos de transações e lançamentos futuros antes da exclusão. Criada em 09/01/2025.';
 
 -- =====================================================
 
