@@ -51,13 +51,18 @@ export function useUser() {
 
       // Se encontrou como usuário principal, retornar
       if (profileData) {
+        // Supabase retorna planos_sistema como objeto quando há apenas 1 resultado
+        const planosData = Array.isArray(profileData.planos_sistema) 
+          ? profileData.planos_sistema[0] 
+          : profileData.planos_sistema;
+        
         const finalProfile = {
           user: authUser,
           profile: {
             ...profileData,
             is_dependente: false,
-            max_usuarios_dependentes: (profileData.planos_sistema as any)?.[0]?.max_usuarios_dependentes || 0,
-            permite_compartilhamento: (profileData.planos_sistema as any)?.[0]?.permite_compartilhamento || false
+            max_usuarios_dependentes: planosData?.max_usuarios_dependentes || 0,
+            permite_compartilhamento: planosData?.permite_compartilhamento || false
           } as UserProfile
         };
 
@@ -94,6 +99,11 @@ export function useUser() {
           .eq('id', dependenteData.usuario_principal_id)
           .single();
 
+        // Supabase retorna planos_sistema como objeto quando há apenas 1 resultado
+        const planosData = Array.isArray(principalData?.planos_sistema) 
+          ? principalData.planos_sistema[0] 
+          : principalData?.planos_sistema;
+
         const finalProfile = {
           user: authUser,
           profile: {
@@ -108,8 +118,8 @@ export function useUser() {
             is_dependente: true,
             usuario_principal_id: dependenteData.usuario_principal_id,
             dependente_id: dependenteData.id,
-            max_usuarios_dependentes: (principalData?.planos_sistema as any)?.[0]?.max_usuarios_dependentes || 0,
-            permite_compartilhamento: (principalData?.planos_sistema as any)?.[0]?.permite_compartilhamento || false
+            max_usuarios_dependentes: planosData?.max_usuarios_dependentes || 0,
+            permite_compartilhamento: planosData?.permite_compartilhamento || false
           } as UserProfile
         };
 
