@@ -355,6 +355,12 @@ ALTER TABLE configuracoes_sistema
 ADD COLUMN IF NOT EXISTS logo_url_sidebar TEXT DEFAULT NULL;
 
 ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS logo_url_login TEXT DEFAULT NULL;
+
+ALTER TABLE configuracoes_sistema 
+ADD COLUMN IF NOT EXISTS favicon_url TEXT DEFAULT NULL;
+
+ALTER TABLE configuracoes_sistema 
 ADD COLUMN IF NOT EXISTS video_url_instalacao TEXT DEFAULT NULL;
 
 ALTER TABLE configuracoes_sistema 
@@ -371,6 +377,8 @@ COMMENT ON COLUMN configuracoes_sistema.show_sidebar_name IS 'Se true, exibe nom
 COMMENT ON COLUMN configuracoes_sistema.show_login_logo IS 'Se true, exibe logo na tela de login';
 COMMENT ON COLUMN configuracoes_sistema.show_login_name IS 'Se true, exibe nome da empresa na tela de login';
 COMMENT ON COLUMN configuracoes_sistema.logo_url_sidebar IS 'URL do logo para exibir na sidebar';
+COMMENT ON COLUMN configuracoes_sistema.logo_url_login IS 'URL do logo para exibir na tela de login';
+COMMENT ON COLUMN configuracoes_sistema.favicon_url IS 'URL do favicon (ícone da aba do navegador)';
 COMMENT ON COLUMN configuracoes_sistema.video_url_instalacao IS 'URL do vídeo de instalação/tutorial';
 
 -- =====================================================
