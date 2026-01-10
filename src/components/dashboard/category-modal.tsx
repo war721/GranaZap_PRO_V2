@@ -39,6 +39,7 @@ export function CategoryModal({
   const [selectedIcon, setSelectedIcon] = useState<string>('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
+  const [selectedType, setSelectedType] = useState<'entrada' | 'saida' | 'ambos'>(type);
   
   // Schema dinâmico com tradução
   const categorySchema = z.object({
@@ -58,8 +59,8 @@ export function CategoryModal({
     },
   });
 
-  const accentColor = type === 'entrada' ? '#22C55E' : '#EF4444';
-  const accentColorHover = type === 'entrada' ? '#16A34A' : '#DC2626';
+  const accentColor = selectedType === 'entrada' ? '#22C55E' : selectedType === 'saida' ? '#EF4444' : '#3B82F6';
+  const accentColorHover = selectedType === 'entrada' ? '#16A34A' : selectedType === 'saida' ? '#DC2626' : '#2563EB';
 
   useEffect(() => {
     if (isOpen) {
@@ -67,14 +68,16 @@ export function CategoryModal({
         setValue('descricao', categoryToEdit.descricao);
         setSelectedIcon(categoryToEdit.icon_key || '');
         setKeywords(categoryToEdit.keywords || []);
+        setSelectedType(categoryToEdit.tipo || type);
       } else {
         reset({ descricao: "" });
         setSelectedIcon('');
         setKeywords([]);
+        setSelectedType(type);
       }
       setKeywordInput('');
     }
-  }, [isOpen, categoryToEdit, reset, setValue]);
+  }, [isOpen, categoryToEdit, reset, setValue, type]);
 
   // Sugerir ícone automaticamente quando digitar
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +86,7 @@ export function CategoryModal({
     
     // Se não tem ícone selecionado e está digitando, sugerir
     if (!selectedIcon && value.length > 2) {
-      const suggested = suggestIcon(value, type);
+      const suggested = suggestIcon(value, selectedType === 'ambos' ? 'entrada' : selectedType);
       setSelectedIcon(suggested);
     }
   };
@@ -117,7 +120,7 @@ export function CategoryModal({
       const supabase = createClient();
       const categoryData = {
         descricao: data.descricao,
-        tipo: type,
+        tipo: selectedType,
         usuario_id: profile.id,
         icon_key: selectedIcon || null,
         tipo_conta: accountFilter,
@@ -164,17 +167,74 @@ export function CategoryModal({
             </span>
             <span className={cn(
               "px-3 py-1.5 rounded-full text-xs font-semibold",
-              type === 'entrada'
+              selectedType === 'entrada'
                 ? "bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/30"
-                : "bg-red-500/10 text-red-500 border border-red-500/30"
+                : selectedType === 'saida'
+                ? "bg-red-500/10 text-red-500 border border-red-500/30"
+                : "bg-blue-500/10 text-blue-400 border border-blue-500/30"
             )}>
-              {type === 'entrada' ? t('categories.modal.typeIncome') : t('categories.modal.typeExpense')}
+              {selectedType === 'entrada' ? t('categories.modal.typeIncome') : selectedType === 'saida' ? t('categories.modal.typeExpense') : 'Ambos'}
             </span>
           </div>
           <p className="text-[10px] text-zinc-500 text-center">
             {t('categories.modal.willBeCreatedFor')} {accountFilter === 'pessoal' ? t('categories.modal.contextUsagePersonal') : t('categories.modal.contextUsagePJ')}
           </p>
         </div>
+
+        {/* Seletor de Tipo (apenas ao editar) */}
+        {categoryToEdit && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-white">
+              Tipo da Categoria <span className="text-red-400">*</span>
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedType('entrada')}
+                className={cn(
+                  "px-4 py-3 rounded-lg text-sm font-medium transition-all border-2",
+                  selectedType === 'entrada'
+                    ? "bg-[#22C55E]/10 border-[#22C55E] text-[#22C55E]"
+                    : "bg-[#0A0F1C] border-white/10 text-zinc-400 hover:border-white/20"
+                )}
+              >
+                💰 Receita
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedType('saida')}
+                className={cn(
+                  "px-4 py-3 rounded-lg text-sm font-medium transition-all border-2",
+                  selectedType === 'saida'
+                    ? "bg-red-500/10 border-red-500 text-red-500"
+                    : "bg-[#0A0F1C] border-white/10 text-zinc-400 hover:border-white/20"
+                )}
+              >
+                💸 Despesa
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedType('ambos')}
+                className={cn(
+                  "px-4 py-3 rounded-lg text-sm font-medium transition-all border-2",
+                  selectedType === 'ambos'
+                    ? "bg-blue-500/10 border-blue-500 text-blue-400"
+                    : "bg-[#0A0F1C] border-white/10 text-zinc-400 hover:border-white/20"
+                )}
+              >
+                🔄 Ambos
+              </button>
+            </div>
+            <p className="text-xs text-zinc-400">
+              {selectedType === 'ambos' 
+                ? '⚠️ Categoria aparecerá tanto em Receitas quanto em Despesas'
+                : selectedType === 'entrada'
+                ? '✅ Categoria aparecerá apenas em Receitas'
+                : '✅ Categoria aparecerá apenas em Despesas'
+              }
+            </p>
+          </div>
+        )}
 
         {/* Nome da Categoria */}
         <div className="space-y-2">
@@ -184,7 +244,7 @@ export function CategoryModal({
           <Input
             {...register("descricao")}
             onChange={handleDescriptionChange}
-            placeholder={type === 'entrada' ? t('categories.modal.placeholderIncome') : t('categories.modal.placeholderExpense')}
+            placeholder={selectedType === 'entrada' ? t('categories.modal.placeholderIncome') : selectedType === 'saida' ? t('categories.modal.placeholderExpense') : 'Ex: Transferência, Ajuste'}
             className="bg-[#0A0F1C] border-white/10 text-white placeholder:text-zinc-500 h-11"
             style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
             onFocus={(e) => e.target.style.borderColor = accentColor}
