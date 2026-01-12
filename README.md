@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 💰 GranaZap PRO V2
 
-## Getting Started
+Sistema completo de gestão financeira desenvolvido com Next.js e Supabase.
 
-First, run the development server:
+## 🚀 Tecnologias
 
+- **Framework**: [Next.js 16](https://nextjs.org) com App Router
+- **Linguagem**: TypeScript
+- **Estilização**: Tailwind CSS v4
+- **Backend**: [Supabase](https://supabase.com) (PostgreSQL + Auth)
+- **Gerenciamento de Estado**: Zustand
+- **Consultas de Dados**: TanStack Query (React Query)
+- **Formulários**: React Hook Form + Zod
+- **Gráficos**: Recharts
+- **Animações**: Framer Motion
+- **UI Components**: Radix UI
+- **Internacionalização**: next-intl
+
+## 📋 Funcionalidades
+
+- ✅ Autenticação de usuários
+- ✅ Gestão de receitas e despesas
+- ✅ Dashboard com gráficos e estatísticas
+- ✅ Relatórios em PDF
+- ✅ Sistema de categorias
+- ✅ Interface responsiva e moderna
+- ✅ Modo escuro/claro
+- ✅ Internacionalização (i18n)
+
+## 🛠️ Instalação
+
+1. Clone o repositório:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/war721/GranaZap_PRO_V2.git
+cd GranaZap_PRO_V2
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Instale as dependências:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Configure as variáveis de ambiente:
+Crie um arquivo `.env.local` baseado no `.env.example` com suas credenciais do Supabase:
+```env
+NEXT_PUBLIC_SUPABASE_URL=sua_url_do_supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=sua_chave_anonima
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Execute o servidor de desenvolvimento:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Abra [http://localhost:3000](http://localhost:3000) no navegador.
 
-To learn more about Next.js, take a look at the following resources:
+## 📁 Estrutura do Projeto
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+granazap/
+├── src/
+│   ├── app/              # App Router (páginas e rotas)
+│   ├── components/       # Componentes React reutilizáveis
+│   ├── lib/             # Bibliotecas e utilitários
+│   ├── hooks/           # Custom React Hooks
+│   └── types/           # Definições TypeScript
+├── public/              # Arquivos estáticos
+├── supabase/            # Configurações do Supabase
+└── package.json
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 Scripts Disponíveis
 
-## Deploy on Vercel
+- `npm run dev` - Inicia o servidor de desenvolvimento
+- `npm run build` - Cria a build de produção
+- `npm start` - Inicia o servidor de produção
+- `npm run lint` - Executa o linter
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🗄️ Banco de Dados
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+O projeto utiliza Supabase (PostgreSQL) para armazenamento de dados. As migrações e esquemas estão na pasta `supabase/`.
+
+## 📝 Licença
+
+Este projeto é privado e de uso exclusivo.
+
+## 👨‍💻 Desenvolvedor
+
+Desenvolvido por [war721](https://github.com/war721)
+
+---
+
+**Versão**: 2.0.0  
+**Última atualização**: Janeiro 2026
